@@ -95,61 +95,59 @@ function renderWhy() {
   const rt = S.data.runtime;
   return `
   <section class="hero">
-    <div class="eyebrow">Scribular Note-Style Coach</div>
-    <h1>Your note style. Your device. Improvements you control.</h1>
-    <p>Therapists can set up how their AI-drafted notes should read, test it on a practice session, and improve it over time. There's no prompt engineering, no support ticket, and session data is sent only to the configured Ollama endpoint.</p>
+    <div class="eyebrow">Scribular · private AI notes for therapists</div>
+    <h1>Less admin, more time talking to patients.</h1>
+    <p>Therapists spend too much of their week writing session notes for insurance. Scribular drafts those notes with an AI model that runs on the therapist's own computer, so patient conversations stay private by default.</p>
+    <p class="hero-today"><b>Built today:</b> the Note-Style Coach, a tool clinicians use to customize their own clinical notes without a developer.</p>
     <div class="row">
-      <button class="btn primary" data-act="goto" data-to="upload">Create my note style →</button>
-      <button class="btn ghost" data-act="goto" data-to="control">Start from a default</button>
+      <button class="btn primary" data-act="goto" data-to="upload">Customize my notes →</button>
+      <button class="btn ghost" data-act="goto" data-to="control">Start from a default style</button>
     </div>
-    <div class="chips"><span>Local model: ${esc(rt.model)}</span><span>No cloud fallback</span><span>Nothing changes without your approval</span><span>Every version can be restored</span></div>
+    <div class="chips"><span>🔒 AI runs on this computer</span><span>No cloud, no fallback</span><span>Notes written your way</span><span>You approve every change</span></div>
   </section>
 
-  <div class="section-title"><div class="eyebrow">The problem</div><h2>Clinicians know exactly how their notes should read. Getting the AI to write that way still takes an expert.</h2></div>
+  <div class="section-title"><div class="eyebrow">The problem</div><h2>Documentation is taking time away from care.</h2></div>
+  <div class="grid three">
+    <div class="card problem"><div class="icon">⏱</div><h3>Notes eat the day</h3><p>Every session needs a progress note for insurance and records. That writing happens between clients or after hours, which is time not spent with patients.</p></div>
+    <div class="card problem"><div class="icon">☁️</div><h3>Cloud scribes raise a privacy question</h3><p>Most AI scribes send session content to someone else's servers. In therapy, that content is the most sensitive conversation in a client's life.</p></div>
+    <div class="card problem"><div class="icon">✍️</div><h3>Generic notes don't fit</h3><p>Every clinician and modality writes differently. A note the therapist has to rewrite saves very little time.</p></div>
+  </div>
+
+  <div class="section-title"><div class="eyebrow">Our solution</div><h2>An AI scribe that stays on the therapist's computer.</h2></div>
   <div class="grid half">
-    <div class="card problem">
-      <p class="big-q">“Keep it brief. Report what the client said and don't interpret it. Use their exact words. Only list next steps if we actually agreed on them.”</p>
-      <p class="small" style="margin:0">This paraphrases the kinds of style requirements one existing Scribular customer sent by email. Style covers meaning as well as format: reporter language, exact quotes, correct attribution, and no invented goals or next actions.</p>
+    <div class="card tomorrow">
+      <h3 style="margin-top:0">Scribular runs the AI locally</h3>
+      <p>The language model (here <b>${esc(rt.model)}</b>, through Ollama) runs on the clinician's own machine. Session content isn't sent to a cloud service, and there's no cloud fallback. Private is the default.</p>
     </div>
-    <div class="card">
-      <h3 style="margin-top:0">How a custom style gets made today</h3>
-      <div class="loop"><span>Clinician emails preferences</span><i>→</i><span>Founder translates them into a prompt</span><i>→</i><span>Tests it on a local model</span><i>→</i><span>Sends a PDF</span><i>→</i><span>Clinician pastes it into settings</span></div>
-      <p style="margin:12px 0 0">Every later change goes back through the same loop. The clinician can't see which version is active, can't try a change safely, and can't undo one.</p>
-      <p class="evidence">Source: de-identified journey of one existing customer (docs/customer-journey-today.md). It shows a concrete need, not market size.</p>
+    <div class="card today">
+      <h3 style="margin-top:0">The missing piece: notes in <em>your</em> style</h3>
+      <p style="margin:0 0 10px">Until now, customizing a Scribular note took a support loop:</p>
+      <div class="loop"><span>Clinician emails preferences</span><i>→</i><span>Founder writes a prompt</span><i>→</i><span>Tests it</span><i>→</i><span>Sends a PDF</span><i>→</i><span>Clinician pastes it in</span></div>
+      <p class="evidence">Source: de-identified journey of an existing Scribular customer (docs/customer-journey-today.md).</p>
     </div>
   </div>
 
   <div class="card vp">
-    <div class="eyebrow">Value proposition</div>
-    <q>Your note style, created locally and improved with feedback you control.</q>
-    <p class="small" style="max-width:640px;margin:0 auto">Replace founder-mediated prompt engineering with a self-serve flow the clinician runs on their own computer. The clinician keeps the clinical judgment; the software does the translation, testing, and version keeping.</p>
+    <div class="eyebrow">What we built at the hackathon</div>
+    <q>A tool clinicians use to customize their own clinical notes.</q>
+    <p class="small" style="max-width:660px;margin:0 auto">Show it one note you like. It learns the style, practices on a fictional session, and lets you approve, test, and improve it, all on your own computer.</p>
   </div>
 
-  <div class="section-title"><div class="eyebrow">The solution</div><h2>Four steps, with local Ollama inference</h2></div>
   <div class="grid four">
-    <div class="card step-card"><div class="num">1</div><h3>Upload a note you like</h3><p>We read the style: headings, length, voice, and quotes. You confirm anything we're unsure about. Patient details are not kept.</p></div>
-    <div class="card step-card"><div class="num">2</div><h3>We prepare your template</h3><p>The local model writes practice notes on a fictional session. Automated checks find formatting problems, and the template is revised up to two times.</p></div>
-    <div class="card step-card"><div class="num">3</div><h3>You stay in control</h3><p>Review and edit the draft, or pick a default. Approve it to make it active. Every change becomes a new version you can restore.</p></div>
-    <div class="card step-card"><div class="num">4</div><h3>Try it on a new session</h3><p>A different fictional session gets a real locally generated note. Accept it, edit just that note, or teach the template for future notes.</p></div>
+    <div class="card step-card"><div class="num">1</div><h3>Upload a note you like</h3><p>It reads the style: sections, length, voice, and quotes. Patient details in your example are not kept.</p></div>
+    <div class="card step-card"><div class="num">2</div><h3>It prepares your template</h3><p>The local AI writes practice notes on a fictional session, checks them, and fixes problems.</p></div>
+    <div class="card step-card"><div class="num">3</div><h3>You approve it</h3><p>Edit the template or pick a default. Nothing goes live until you approve it, and every version can be restored.</p></div>
+    <div class="card step-card"><div class="num">4</div><h3>Try it on a new session</h3><p>Get a real AI note for a different fictional session. Accept it, fix just that note, or tell it how to write future notes.</p></div>
   </div>
 
-  <div class="grid half compare">
-    <div class="card today"><h3>Today</h3><ul>
-      <li>Preferences live in email threads</li><li>Changes depend on the founder being available</li>
-      <li>Install means copying a prompt out of a PDF</li><li>No visible active version, preview, or rollback</li></ul></div>
-    <div class="card tomorrow"><h3>With the Note-Style Coach</h3><ul>
-      <li>Preferences are structured and confirmed by the clinician</li><li>Self-serve, on the clinician's own computer</li>
-      <li>Drafts are tested on a fictional session before use</li><li>Updates are previewed on a fresh session, then approved or rejected. Any version can be restored.</li></ul></div>
-  </div>
-
-  <div class="section-title"><div class="eyebrow">Built for trust</div><h2>Designed for clinical notes</h2></div>
+  <div class="section-title"><div class="eyebrow">Built for clinical trust</div><h2>Safeguards you can see</h2></div>
   <div class="grid four trust">
-    <div class="card"><div class="icon">🔒</div><h3>Local only</h3><p>Inference runs on ${esc(rt.model)} through Ollama (${esc(rt.ollamaPlacement || "loopback")}). No cloud fallback is configured.</p></div>
-    <div class="card"><div class="icon">📎</div><h3>Grounded</h3><p>Fixed rules forbid invented quotes, interventions, diagnoses, goals, or next actions, and clinician edits can't remove them. Quotes are checked word for word against the transcript.</p></div>
-    <div class="card"><div class="icon">✅</div><h3>You approve</h3><p>A saved draft isn't active, and a finished generation isn't approval. Updates are proposed, previewed on a fresh session, then approved or rejected.</p></div>
-    <div class="card"><div class="icon">🧭</div><h3>Honest limits</h3><p>The checks cover formatting and consistency, not clinical accuracy. Practice sessions are fictional and never counted as real sessions. No model weights are trained.</p></div>
+    <div class="card"><div class="icon">🔒</div><h3>Private by default</h3><p>Inference runs locally through Ollama (${esc(rt.ollamaPlacement || "loopback")}). No cloud model and no cloud fallback.</p></div>
+    <div class="card"><div class="icon">📎</div><h3>Never makes things up</h3><p>Fixed rules forbid invented quotes, diagnoses, goals, or next steps. Quotes are checked word for word, and so is who said them.</p></div>
+    <div class="card"><div class="icon">✅</div><h3>You stay in charge</h3><p>Every template change is proposed, previewed on a fresh session, and then approved or rejected by you.</p></div>
+    <div class="card"><div class="icon">🧭</div><h3>Honest about limits</h3><p>Hackathon prototype on fictional sessions. The checks cover format, not clinical accuracy, and time savings haven't been measured yet.</p></div>
   </div>
-  <div class="row" style="justify-content:center;margin-top:10px"><button class="btn primary" data-act="goto" data-to="upload">Start the walkthrough →</button></div>`;
+  <div class="row" style="justify-content:center;margin-top:10px"><button class="btn primary" data-act="goto" data-to="upload">See it work →</button></div>`;
 }
 
 // ------------------------------------------------------------ screen 1: upload

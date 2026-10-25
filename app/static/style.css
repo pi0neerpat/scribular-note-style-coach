@@ -131,3 +131,6 @@ details summary { cursor: pointer; color: var(--teal-2); font-weight: 500; }
 .title-row .sub { margin-bottom: 0; }
 @media (max-width: 960px) { .grid, .grid.half, .grid.side, .grid.three, .grid.four { grid-template-columns: 1fr; } .hero h1 { font-size: 34px; } nav button .lbl { display: none; } }
 pre.diff { font-size: 12px; } pre.diff .add { color: #1d6b3a; background: #e9f7ee; display: block; } pre.diff .remove { color: var(--bad); background: var(--bad-soft); display: block; text-decoration: line-through; }
+.hero .hero-today { font-size: 16px; color: #fff; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .22); border-radius: 12px; padding: 10px 14px; display: inline-block; margin: 0 0 24px; }
+.problem .icon, .trust .icon { font-size: 24px; margin-bottom: 6px; }
+.problem h3 { margin: 0 0 6px; } .problem p { margin: 0; color: var(--muted); font-size: 14.5px; }
