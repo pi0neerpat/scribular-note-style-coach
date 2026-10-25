@@ -3,25 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scribular Note-Style Coach</title>
+<title>Scribular Notes</title>
 <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-<header>
-  <div class="bar">
-    <div class="brand" data-act="goto" data-to="why"><div class="logo">S</div><b>Scribular</b><span>Note-Style Coach</span></div>
-    <span class="local-pill">● Local Ollama · no cloud fallback</span>
-  </div>
-  <nav id="steps">
-    <button class="why" data-screen="why">Why</button>
-    <button data-screen="upload"><span class="n">1</span><span class="lbl">Upload documents</span></button>
-    <button data-screen="prepare"><span class="n">2</span><span class="lbl">Preparing your template</span></button>
-    <button data-screen="control"><span class="n">3</span><span class="lbl">Template Control</span></button>
-    <button data-screen="meeting"><span class="n">4</span><span class="lbl">Main Meeting: Simulation</span></button>
-  </nav>
-</header>
-<main id="app"></main>
-<footer id="status"></footer>
+<body class="clinician">
+<div class="shell">
+  <aside id="side"></aside>
+  <main id="app"></main>
+</div>
 <script src="/app.js"></script>
 </body>
 </html>
