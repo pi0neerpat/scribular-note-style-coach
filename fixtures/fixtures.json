@@ -1,0 +1,31 @@
+{
+  "notice": "All transcripts in this folder are fictional and were written for this demo. They contain no real client or session content.",
+  "noteTypes": [
+    {
+      "id": "narrative",
+      "label": "Narrative therapy session",
+      "fixtures": {
+        "development": "narrative-a",
+        "simulation": "narrative-b",
+        "fresh": "narrative-c"
+      }
+    },
+    {
+      "id": "general",
+      "label": "General individual therapy session (CBT-informed)",
+      "fixtures": {
+        "development": "general-a",
+        "simulation": "general-b",
+        "fresh": "general-c"
+      }
+    }
+  ],
+  "fixtures": {
+    "narrative-a": {"version": 1, "file": "narrative-a.txt", "names": ["Priya"], "explicitNextActions": true},
+    "narrative-b": {"version": 1, "file": "narrative-b.txt", "names": ["Tomas"], "explicitNextActions": false},
+    "narrative-c": {"version": 1, "file": "narrative-c.txt", "names": ["Ruth"], "explicitNextActions": true},
+    "general-a": {"version": 1, "file": "general-a.txt", "names": ["Jordan"], "explicitNextActions": true},
+    "general-b": {"version": 1, "file": "general-b.txt", "names": ["Sam"], "explicitNextActions": false},
+    "general-c": {"version": 1, "file": "general-c.txt", "names": ["Lena"], "explicitNextActions": true}
+  }
+}

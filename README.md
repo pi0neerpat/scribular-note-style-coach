@@ -6,7 +6,7 @@ Hackathon project for the Claude Impact Lab, Seattle, October 25, 2026.
 
 ## Status — read this first
 
-This repository is a **public project foundation and evidence pack**, not a completed coach application. It contains a de-identified current customer journey, product requirements, a lean canvas, a local evaluation plan, a sanitized reference prompt, and a demo/submission checklist. No working coach, validated local judge, benchmark results, or demo video is claimed.
+This repository contains a **working local demo** of the four-screen note-style flow (`app/`) plus the original evidence pack (`docs/`). The demo runs real local inference through Ollama on fictional transcripts. It does **not** include a validated local judge, clinician-reviewed results, measured time savings, or integration into the Scribular desktop apps. See [Verification](#verification) and [Limitations](#limitations) for what has actually been tested.
 
 The existing Scribular product and private custom-prompt tool predate this hackathon. This repo does not include their code or represent them as new work.
 
@@ -47,11 +47,84 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
 - [Proposed clarified starter prompt](examples/narrative-style-starter.txt).
 - [Synthetic preferences](examples/style-preferences.json).
 
-## Getting started today
+## Run the demo
 
-Read the customer journey, scope, and evaluation plan; then implement the smallest vertical slice described in the hackathon checklist. No installation is required to read this evidence pack. **There is no application launch command yet.** Do not present this repository as plug-and-play until setup and the core flow have been implemented and verified.
+Requirements: macOS/Linux with Python 3.9+ (standard library only, nothing to `pip install`) and a current [Ollama](https://ollama.com/download) with the pinned model:
 
-Planned runtime: a local interface plus Ollama, with no cloud fallback. Inspect AI is the recommended development evaluation harness; Phoenix is optional, not a required end-user dependency.
+```bash
+ollama pull gemma4:e4b                 # ~6.6 GB, needs a recent Ollama (tested: 0.40.11)
+python3 app/server.py                  # http://127.0.0.1:8765
+```
+
+If your Ollama runs somewhere other than `127.0.0.1:11434` (for example a second Ollama next to the one bundled in Scribular.app), set it explicitly. Only loopback addresses are accepted:
+
+```bash
+OLLAMA_URL=http://127.0.0.1:11435 python3 app/server.py
+```
+
+Options: `COACH_MODEL` (default `gemma4:e4b`), `COACH_PORT` (default `8765`), `COACH_DATA_DIR` (default `app/data/`, which is git-ignored). Delete the data directory to reset the demo.
+
+### What you can do
+
+0. **Why**: problem statement, value proposition, and solution.
+1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or click *Use a fictional example*), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
+2. **Preparing your template**: real phases, attempt count (up to 3: one first try plus at most two targeted revisions), elapsed time, and cancel/retry. Runs on fictional development transcript **A**.
+3. **Template Control**: the draft and its practice checks, a preference editor, an advanced prompt editor (the fixed grounding rules can't be removed), version history, approve/activate, and restore.
+4. **Main Meeting: Simulation**: fictional transcript **B** (never used for refinement) and a real local note. From there you can accept (and activate), *edit this note only*, or *improve my template*. Choosing *Apply to future notes* creates a **proposed** version, which is previewed against the current version on untouched transcript **C**. You then approve, defer, or reject it. Once feedback on B shapes the template, B is recorded as development evidence.
+
+Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
+
+### Repository layout
+
+- `app/server.py` — loopback HTTP server, background jobs (prepare / simulate / proposal preview) with cancellation.
+- `app/coach.py` — preference extraction, prompt compiler with fixed grounding block, code checks, targeted revisions, feedback-to-proposal mapping.
+- `app/store.py` — local JSON store: styles, versions (content fixed after creation; approval-state history appended), runs with prompt snapshot + runtime + fixture provenance + purpose, content-free event log.
+- `app/ollama.py` — loopback-only Ollama client, context-budget check, pinned options.
+- `app/static/` — the UI (plain HTML/CSS/JS, no external requests).
+- `fixtures/` — six newly written **fictional** transcripts (A/B/C for two note types).
+- `tests/`, `scripts/e2e_demo_check.py` — automated checks (below).
+
+Inspect AI and Phoenix are not used in this demo. They remain optional development-evaluation tools.
+
+## Verification
+
+Run on October 25, 2026. Machine: Apple M5, 16 GB RAM, macOS 26.6. Runtime: Ollama 0.40.11 with `gemma4:e4b` (digest `eb2177adf764…`). Settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off.
+
+```bash
+python3 -m unittest discover -s tests          # 15 tests, OK (no model needed)
+COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &   # fresh data dir
+python3 scripts/e2e_demo_check.py              # ALL E2E CHECKS PASSED (real inference)
+```
+
+The end-to-end script drives the HTTP API through this sequence:
+
+- extract preferences
+- cancel a preparation (no template is created)
+- prepare on A (draft, not active)
+- simulate on B with a real local note
+- accept and activate explicitly
+- make a note-only edit (template unchanged)
+- give *future notes* feedback, which proposes a version previewed on untouched C; the active version is unchanged and B is marked as development evidence
+- approve, then restore v1 (the historical run keeps its prompt snapshot)
+- try to remove the grounding rules in a prompt edit (rejected)
+- confirm run counts: real = 0
+
+Observed on this machine (single runs, not benchmarks):
+
+- Preparation took 5–7 s with 2 attempts. The first attempt failed a formatting check and one targeted revision fixed it.
+- A simulated note took about 2.5 s.
+- A proposal preview (two generations) took about 4.5 s.
+
+On fictional transcript B, Gemma 4 wrote `Next Actions: None` instead of omitting the section. The omission check flags this, and the *Improve my template* flow produces a proposed fix. An earlier trial with `gemma2:2b` showed more failures, including numbered headings and a therapist/client attribution mix-up that no code check catches.
+
+## Limitations
+
+- Checks are deterministic formatting/consistency checks: section structure, the omission rule, length, exact quotes, names, pronouns, and preamble. They **cannot** verify clinical accuracy or attribution; that needs clinician review. There is no local LLM judge.
+- Results come from a small set of fictional transcripts on one machine and one model. They are not validated with clinicians, and they say nothing about time saved.
+- Preference extraction is heuristic: it detects headings, sentence counts, quotes, voice, and pronouns. Uncertain readings are shown to the clinician for confirmation.
+- "Preparing" changes prompt text and preferences only. No model weights are trained.
+- Standalone demo: it is not integrated with the Scribular Electron or Tauri apps, and Tauri (llama.cpp) compatibility is not tested.
+- Notes and feedback are stored unencrypted in `app/data/` on this machine. Retention and deletion policies are not defined beyond deleting that folder.
 
 ## Deadline and submission
 
