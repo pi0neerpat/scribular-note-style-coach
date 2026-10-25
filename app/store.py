@@ -76,13 +76,13 @@ class Store:
             return s
 
     def add_version(self, style_id, preferences, prompt, explanation, state="draft", parent_id=None,
-                    validation=None, prompt_edited=False):
+                    validation=None, prompt_edited=False, change_summary=None):
         assert state in ("draft", "proposed")
         with self.lock:
             n = len(self.versions_of(style_id)) + 1
             v = {"id": new_id("ver"), "styleId": style_id, "version": n, "parentId": parent_id,
                  "preferences": preferences, "prompt": prompt, "promptEdited": prompt_edited,
-                 "explanation": explanation, "state": state, "createdAt": now(),
+                 "explanation": explanation, "changeSummary": change_summary, "state": state, "createdAt": now(),
                  "stateHistory": [{"state": state, "at": now()}], "validation": validation or {}}
             self.data["versions"].append(v)
             self._save()

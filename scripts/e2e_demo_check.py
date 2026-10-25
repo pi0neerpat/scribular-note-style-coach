@@ -107,8 +107,14 @@ call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "note_onl
 assert len(call("/api/state")["styles"][0]["versions"]) == 1
 ok("note-only edit left template unchanged")
 
+# Contradictory feedback must not create an empty "new" version
+r = call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future", "tags": ["too_long", "omitted_content"]}, expect=400)
+assert "No template change" in r["error"] and len(call("/api/state")["styles"][0]["versions"]) == 1
+ok("contradictory feedback rejected with explanation; no empty version created")
+
 # Future feedback -> proposal -> fresh check on C
-r = call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future", "tags": ["too_long", "quote_problem"]})
+r = call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future", "tags": ["too_long", "quote_problem"],
+                                                       "addSection": {"name": "Objective Data"}})
 prop = r["proposalId"]
 st = call("/api/state")
 assert st["fixtureUse"]["narrative-b"]["role"] == "development"
@@ -117,6 +123,7 @@ j = wait(r["jobId"])
 assert j["status"] == "completed", j
 pv = [v for v in call("/api/state")["styles"][0]["versions"] if v["id"] == prop][0]
 assert pv["state"] == "proposed" and pv["parentId"] == v1 and pv["validation"]["fixtureId"] == "narrative-c"
+assert "Objective Data" in pv["prompt"] and pv["changeSummary"]["promptDiff"] and len(pv["changeSummary"]["changes"]) >= 2
 ok("proposal v2 previewed on fresh narrative-c (%.1fs); active still v1; B now marked development" % j["elapsed"])
 
 # Approve, then rollback

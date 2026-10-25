@@ -335,9 +335,13 @@ class Handler(BaseHTTPRequestHandler):
             edited = prompt.strip() != compiled.strip()
             if edited and not coach.prompt_keeps_grounding(prompt):
                 return self.err("The fixed grounding rules must stay in the prompt unchanged. Edit the other parts instead.")
+            if prompt.strip() == parent["prompt"].strip():
+                return self.err("Nothing changed compared with v%d, so no new version was saved." % parent["version"])
             v = store.add_version(parent["styleId"], prefs, prompt,
                                   (b.get("explanation") or "Edited in Template Control.").strip()[:300],
-                                  parent_id=parent["id"], prompt_edited=edited)
+                                  parent_id=parent["id"], prompt_edited=edited,
+                                  change_summary={"changes": [], "notes": [],
+                                                  "promptDiff": coach.prompt_diff(parent["prompt"], prompt)})
             store.event("template_saved", versionId=v["id"], promptEdited=edited)
             return self.send_json({"versionId": v["id"]})
 
@@ -392,25 +396,37 @@ class Handler(BaseHTTPRequestHandler):
         scope = b.get("scope") or "note_only"
         tags = [t for t in (b.get("tags") or []) if t in coach.FEEDBACK_TAGS]
         text = (b.get("text") or "").strip()[:500]
-        fb = {"accepted": bool(b.get("accepted")), "scope": scope, "tags": tags, "comment": text or None, "at": time.strftime("%Y-%m-%dT%H:%M:%S")}
+        add_section = b.get("addSection") if isinstance(b.get("addSection"), dict) else None
+
+        proposal = None
+        if scope == "future":
+            v = store.version(r["versionId"])
+            new_prefs, changes, notes = coach.apply_feedback(v["preferences"], tags, text, add_section)
+            new_prompt = coach.compile_prompt(new_prefs)
+            if not changes or new_prompt.strip() == v["prompt"].strip():
+                msg = " ".join(notes) or "Choose a reason, add a section, or write an instruction so there is something to change."
+                return self.send_json({"error": "No template change was proposed. " + msg, "notes": notes}, 400)
+            proposal = (v, new_prefs, new_prompt, changes, notes)
+
+        fb = {"accepted": bool(b.get("accepted")), "scope": scope, "tags": tags, "comment": text or None,
+              "addedSection": (add_section or {}).get("name") or None, "at": time.strftime("%Y-%m-%dT%H:%M:%S")}
         fields = {"feedback": fb}
         if b.get("editedNote") is not None:
             fields["noteEdit"] = {"text": b["editedNote"], "at": fb["at"], "appliesTo": "this note only"}
         store.update_run(run_id, **fields)
         store.event("feedback_submitted", runId=run_id, scope=scope, tags=tags, accepted=fb["accepted"], hasComment=bool(text))
-        if scope != "future":
+        if proposal is None:
             return self.send_json({"ok": True})
 
-        v = store.version(r["versionId"])
-        new_prefs, changes = coach.apply_feedback(v["preferences"], tags, text)
-        if not changes:
-            return self.err("Choose at least one reason or write an instruction to change future notes.")
+        v, new_prefs, new_prompt, changes, notes = proposal
         # Feedback on this transcript now shapes the template, so it is no longer held out.
         store.mark_fixture_development(r["fixtureId"], "feedback informed update")
         style = store.style(v["styleId"])
-        prop = store.add_version(v["styleId"], new_prefs, coach.compile_prompt(new_prefs),
-                                 "Proposed from your feedback on a simulated session: " + " ".join(changes),
-                                 state="proposed", parent_id=v["id"])
+        prop = store.add_version(v["styleId"], new_prefs, new_prompt,
+                                 "Proposed from your feedback on a simulated session.",
+                                 state="proposed", parent_id=v["id"],
+                                 change_summary={"changes": changes, "notes": notes,
+                                                 "promptDiff": coach.prompt_diff(v["prompt"], new_prompt)})
         store.event("style_update_proposed", versionId=prop["id"], parentId=v["id"], tags=tags)
         fid, _ = untouched_fixture(style["noteType"], exclude=(r["fixtureId"],))
         if fid is None:

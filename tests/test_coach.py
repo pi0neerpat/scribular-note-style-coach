@@ -89,13 +89,32 @@ The client will call Marisol on Sunday."""
 
 class Compilation(unittest.TestCase):
     def test_grounding_survives_every_feedback_change(self):
-        new, changes = coach.apply_feedback(PREFS, list(coach.FEEDBACK_TAGS), "Keep it warm.")
+        new, changes, _ = coach.apply_feedback(PREFS, list(coach.FEEDBACK_TAGS), "Keep it warm.", {"name": "Diagnosis"})
         self.assertTrue(changes)
         self.assertTrue(coach.prompt_keeps_grounding(coach.compile_prompt(new)))
         self.assertEqual(PREFS["emphasis"], [], "feedback must not mutate the original preferences")
 
     def test_feedback_without_reason_proposes_nothing(self):
         self.assertEqual(coach.apply_feedback(PREFS, [], "")[1], [])
+
+    def test_conflicting_length_tags_change_nothing_and_explain(self):
+        new, changes, notes = coach.apply_feedback(PREFS, ["too_long", "omitted_content"], "")
+        self.assertEqual(changes, [])
+        self.assertEqual(coach.compile_prompt(new), coach.compile_prompt(PREFS))
+        self.assertTrue(notes)
+
+    def test_added_section_is_optional_and_before_trailing_optional(self):
+        new, changes, notes = coach.apply_feedback(PREFS, [], "", {"name": "Diagnosis"})
+        names = [s["name"] for s in new["sections"]]
+        self.assertEqual(names, ["Client Discussed", "Therapist Contribution", "Diagnosis", "Next Actions"])
+        self.assertFalse(new["sections"][2]["required"])
+        self.assertIn("Diagnosis", coach.compile_prompt(new))
+        self.assertTrue(any("invent" in n for n in notes))
+
+    def test_prompt_diff_shows_added_instruction(self):
+        new, _, _ = coach.apply_feedback(PREFS, [], "Keep it warm.")
+        diff = coach.prompt_diff(coach.compile_prompt(PREFS), coach.compile_prompt(new))
+        self.assertIn({"op": "add", "text": "- Keep it warm."}, diff)
 
 
 class Versions(unittest.TestCase):

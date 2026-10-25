@@ -18,6 +18,7 @@ const S = {
   styleId: null, versionId: null, editPrefs: null, editPrompt: null,
   proposalJob: null, compare: null,
   simJob: null, simRun: null, simWarning: null, simMode: null,
+  fb: { tags: [], text: "", scope: "future", secName: "", secReq: false },
   flash: null,
 };
 
@@ -275,6 +276,7 @@ function renderControl() {
           </div>
         </div>
         <p>${esc(v.explanation)}</p>
+        ${changesHtml(v)}
         ${isProposal ? proposalPanel(v) : ""}
         ${!isProposal && v.validation && v.validation.checks ? checksHtml(v.validation.checks, v.validation.kind === "development" ? `Practice note on fictional transcript ${v.validation.fixtureId}` : "Latest checks") : ""}
       </div>
@@ -368,17 +370,41 @@ function renderMeeting() {
 }
 
 function improvePanel() {
-  const tags = S.data.feedbackTags;
+  const tags = S.data.feedbackTags, f = S.fb;
   return `<div class="card" style="background:#fafdfc;margin-top:12px">
     <h2>What should change?</h2>
-    <div class="tags">${Object.entries(tags).map(([k, l]) => `<label><input type="checkbox" class="fbtag" value="${k}"> ${esc(l)}</label>`).join("")}</div>
+    <div class="tags">${Object.entries(tags).map(([k, l]) => `<label><input type="checkbox" class="fbtag" value="${k}" ${f.tags.includes(k) ? "checked" : ""}> ${esc(l)}</label>`).join("")}</div>
+    <label>Add a section (optional)</label>
+    <div class="row"><input type="text" id="fb-sec" style="width:260px" placeholder="e.g. Diagnosis, Objective Data" value="${esc(f.secName)}">
+      <label style="margin:0;color:var(--ink)"><input type="checkbox" id="fb-sec-req" ${f.secReq ? "checked" : ""}> always include</label></div>
+    <p class="small" style="margin:4px 0 0">New sections include only what the session explicitly states. The model never invents diagnoses, codes, or findings.</p>
     <label>Tell us in your own words (optional; stays on this computer)</label>
-    <textarea id="fb-text" style="min-height:60px" placeholder="e.g. Always mention the name the client gave the problem."></textarea>
+    <textarea id="fb-text" style="min-height:60px" placeholder="e.g. Always mention the name the client gave the problem.">${esc(f.text)}</textarea>
     <h3>Apply to future notes?</h3>
-    <label><input type="radio" name="scope" value="future" checked> Yes — propose a template update. I'll review a preview before anything changes.</label>
-    <label><input type="radio" name="scope" value="note_only"> No — this feedback is about this note only.</label>
+    <label><input type="radio" name="scope" value="future" ${f.scope === "future" ? "checked" : ""}> Yes, propose a template update. I'll review a preview before anything changes.</label>
+    <label><input type="radio" name="scope" value="note_only" ${f.scope === "note_only" ? "checked" : ""}> No, this feedback is about this note only.</label>
     <div class="row" style="margin-top:10px"><button class="btn primary" data-act="send-feedback">Submit</button><button class="btn" data-act="sim-mode" data-m="">Cancel</button></div>
   </div>`;
+}
+
+function readFeedbackForm() {
+  S.fb = {
+    tags: [...document.querySelectorAll(".fbtag:checked")].map((x) => x.value),
+    text: $("#fb-text").value, scope: document.querySelector("input[name=scope]:checked").value,
+    secName: $("#fb-sec").value.trim(), secReq: $("#fb-sec-req").checked,
+  };
+  return S.fb;
+}
+
+function changesHtml(v) {
+  const cs = v.changeSummary;
+  if (!cs) return "";
+  const diff = cs.promptDiff || [];
+  return `<h3>What changes in v${v.version}</h3>
+    ${cs.changes.length ? `<ul style="margin:4px 0 8px">${cs.changes.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
+    ${(cs.notes || []).map((n) => `<div class="notice">${esc(n)}</div>`).join("")}
+    ${diff.length ? `<details><summary>Exact prompt changes (${diff.length} line${diff.length > 1 ? "s" : ""})</summary>
+      <pre class="diff">${diff.map((d) => `<span class="${d.op}">${d.op === "add" ? "+ " : "− "}${esc(d.text)}</span>`).join("\n")}</pre></details>` : ""}`;
 }
 
 // ------------------------------------------------------------ render + status
@@ -440,6 +466,14 @@ async function loadCompare(vid) {
 }
 
 // ------------------------------------------------------------ actions
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.classList && t.classList.contains("fbtag") && t.checked && (t.value === "too_long" || t.value === "omitted_content")) {
+    const other = document.querySelector(`.fbtag[value=${t.value === "too_long" ? "omitted_content" : "too_long"}]`);
+    if (other) other.checked = false;
+  }
+});
+
 document.addEventListener("click", async (e) => {
   const nav = e.target.closest("#steps button");
   if (nav) { captureUploadForm(); return go(nav.dataset.screen); }
@@ -512,10 +546,10 @@ document.addEventListener("click", async (e) => {
       render();
     }
     else if (act === "send-feedback") {
-      const tags = [...document.querySelectorAll(".fbtag:checked")].map((x) => x.value);
-      const scope = document.querySelector("input[name=scope]:checked").value;
-      const r = await api(`/api/runs/${S.simRun.id}/feedback`, { accepted: false, scope, tags, text: $("#fb-text").value });
-      S.simMode = null;
+      const f = readFeedbackForm();
+      const r = await api(`/api/runs/${S.simRun.id}/feedback`, { accepted: false, scope: f.scope, tags: f.tags, text: f.text,
+        addSection: f.secName ? { name: f.secName, required: f.secReq } : null });
+      S.simMode = null; S.fb = { tags: [], text: "", scope: "future", secName: "", secReq: false };
       if (!r.proposalId) { S.simRun = await api(`/api/runs/${S.simRun.id}`); await refresh(); S.flash = { kind: "info", text: "Thanks — recorded for this note only. The template was not changed." }; return render(); }
       await refresh();
       S.styleId = version(r.proposalId).styleId; S.versionId = r.proposalId; S.compare = null;
@@ -529,7 +563,7 @@ document.addEventListener("click", async (e) => {
         if (j.status === "completed") { S.proposalJob = null; await loadCompare(r.proposalId); } else render();
       }
     }
-  } catch (err) { fail(err); }
+  } catch (err) { if ($("#fb-text")) readFeedbackForm(); fail(err); }
 });
 
 (async function init() {

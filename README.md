@@ -108,7 +108,7 @@ Inspect AI and Phoenix are not used in this demo. They remain optional developme
 Run on October 25, 2026. Machine: Apple M5, 16 GB RAM, macOS 26.6. Runtime: Ollama 0.40.11 with `gemma4:e4b` (digest `eb2177adf764…`). Settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off.
 
 ```bash
-python3 -m unittest discover -s tests          # 15 tests, OK (no model needed)
+python3 -m unittest discover -s tests          # 18 tests, OK (no model needed)
 COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &   # fresh data dir
 python3 scripts/e2e_demo_check.py              # ALL E2E CHECKS PASSED (real inference)
 ```

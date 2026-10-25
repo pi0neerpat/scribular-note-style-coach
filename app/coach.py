@@ -259,7 +259,9 @@ def compile_prompt(prefs):
         "You write one therapy progress note from a session transcript.",
         GROUNDING_BLOCK,
         "SECTIONS — use these headings, in this order, each written as 'Heading:' on its own line:\n" + "\n".join(sec_lines),
-        "LENGTH: each section has %d-%d sentences." % (prefs["sentences"]["min"], prefs["sentences"]["max"]),
+        ("LENGTH: each section has exactly %d sentence%s." % (prefs["sentences"]["min"], "" if prefs["sentences"]["min"] == 1 else "s")
+         if prefs["sentences"]["min"] == prefs["sentences"]["max"] else
+         "LENGTH: each section has %d-%d sentences." % (prefs["sentences"]["min"], prefs["sentences"]["max"])),
         "QUOTES: " + quotes,
         "VOICE: " + voice + " " + pron + (" " + names if names else ""),
     ]
@@ -315,6 +317,13 @@ def check_note(output, prefs, fixture_meta, transcript):
         if s.get("required", True):
             continue
         present = s["name"].lower() in found
+        if not re.search(r"next|plan|follow|action|step", s["name"], re.I):
+            if s["name"] in placeholders:
+                add("optional_omission", False, "'%s' has a placeholder; it should be omitted when nothing was stated." % s["name"])
+            else:
+                add("optional_omission", not present, "'%s' %s" % (s["name"], "included. Confirm it was explicitly stated in the session."
+                    if present else "omitted."), warn=True)
+            continue
         stated = fixture_meta.get("explicitNextActions", False)
         if s["name"] in placeholders:
             add("optional_omission", False, "'%s' has a placeholder instead of content; it should be %s." % (
@@ -373,10 +382,17 @@ def revise_for_failures(prefs, checks):
     return new, added
 
 
-def apply_feedback(prefs, tags, text):
-    """Map explicit 'future notes' feedback to a proposed preference change."""
+CLINICAL_CONTENT_RE = re.compile(r"\b(diagnos\w*|icd|dsm|code|codes|assessment|risk|medication\w*|objective)\b", re.I)
+
+
+def apply_feedback(prefs, tags, text, add_section=None):
+    """Map explicit 'future notes' feedback to a proposed preference change.
+
+    Returns (new_prefs, changes, notes). `changes` lists only effective changes;
+    `notes` explains anything that was requested but not applied.
+    """
     new = copy.deepcopy(prefs)
-    changes = []
+    changes, notes = [], []
 
     def emphasize(key, why):
         if key not in new["emphasis"]:
@@ -384,16 +400,22 @@ def apply_feedback(prefs, tags, text):
             changes.append(why)
 
     s = new["sentences"]
-    if "too_long" in tags and s["max"] > s["min"]:
+    shorter, longer = "too_long" in tags, "omitted_content" in tags
+    if shorter and longer:
+        notes.append("\u201cToo long\u201d and \u201cLeft out something important\u201d pull in opposite directions, so section length was left at %d-%d sentences. "
+                     "Pick one, or name what was left out in your own words or as a new section." % (s["min"], s["max"]))
+    elif shorter and s["max"] > s["min"]:
         s["max"] -= 1
-        changes.append("Shorter sections: maximum %d sentences." % s["max"])
-    elif "too_long" in tags and s["min"] > 1:
+        changes.append("Shorter sections: at most %d sentences (was %d)." % (s["max"], s["max"] + 1))
+    elif shorter and s["min"] > 1:
         s["min"] -= 1
         s["max"] -= 1
-        changes.append("Shorter sections: %d-%d sentences." % (s["min"], s["max"]))
-    if "omitted_content" in tags and s["max"] < 8:
+        changes.append("Shorter sections: %d-%d sentences (was %d-%d)." % (s["min"], s["max"], s["min"] + 1, s["max"] + 1))
+    elif shorter:
+        notes.append("Sections are already as short as possible (1 sentence).")
+    elif longer and s["max"] < 8:
         s["max"] += 1
-        changes.append("Allow longer sections: maximum %d sentences." % s["max"])
+        changes.append("Longer sections allowed: up to %d sentences (was %d)." % (s["max"], s["max"] - 1))
     if "wrong_sections" in tags:
         emphasize("sections_present", "Stricter section structure.")
         emphasize("no_repeats", "Never repeat a section.")
@@ -406,8 +428,46 @@ def apply_feedback(prefs, tags, text):
     if "attribution_error" in tags:
         emphasize("attribution", "Check who said what.")
     if "wrong_actions" in tags:
-        emphasize("optional_omission", "Stricter omission rule for optional sections.")
+        emphasize("optional_omission", "Stricter rule: leave out optional sections unless explicitly stated.")
+
+    if add_section and add_section.get("name", "").strip():
+        name = add_section["name"].strip()[:40]
+        if any(x["name"].lower() == name.lower() for x in new["sections"]):
+            notes.append("A section named \u201c%s\u201d already exists." % name)
+        else:
+            required = bool(add_section.get("required"))
+            sec = {"name": name, "required": required,
+                   "guidance": (add_section.get("guidance") or "").strip()[:200] or
+                   "Only information explicitly stated in the transcript."}
+            # Insert after the last required section so trailing optional sections stay last.
+            idx = max([i + 1 for i, x in enumerate(new["sections"]) if x.get("required", True)] or [len(new["sections"])])
+            new["sections"].insert(idx, sec)
+            changes.append("New %s section \u201c%s\u201d%s." % ("required" if required else "optional", name,
+                           "" if required else ", included only when the session explicitly supports it"))
+            if CLINICAL_CONTENT_RE.search(name):
+                notes.append("\u201c%s\u201d will only contain what is explicitly stated in the session. The fixed grounding rules "
+                             "never let the model invent diagnoses, codes, or clinical findings." % name)
+
     if text and text.strip():
-        new["additionalInstructions"].append(text.strip())
-        changes.append("Added your instruction: “%s”" % text.strip())
-    return new, changes
+        t = text.strip()
+        if t in new["additionalInstructions"]:
+            notes.append("That instruction is already part of this template.")
+        else:
+            new["additionalInstructions"].append(t)
+            changes.append("Added your instruction: \u201c%s\u201d" % t)
+            if CLINICAL_CONTENT_RE.search(t):
+                notes.append("Your instruction mentions clinical content (e.g. diagnoses or codes). The model will include it only if the "
+                             "session explicitly states it; it will not invent it. To give it its own heading, use \u201cAdd a section\u201d.")
+    return new, changes, notes
+
+
+def prompt_diff(old, new):
+    """Added/removed prompt lines, for showing the clinician exactly what changed."""
+    import difflib
+    out = []
+    for line in difflib.unified_diff(old.splitlines(), new.splitlines(), lineterm="", n=0):
+        if line.startswith(("+++", "---", "@@")):
+            continue
+        if line[1:].strip():
+            out.append({"op": "add" if line[0] == "+" else "remove", "text": line[1:]})
+    return out
