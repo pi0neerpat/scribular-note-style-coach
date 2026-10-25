@@ -210,3 +210,12 @@ button.link { border: 0; background: none; color: var(--teal-2); padding: 4px 0;
 .clinician .card > .row:last-child { margin-top: 16px; }
 @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } #side { position: static; height: auto; } .two, .settings { grid-template-columns: 1fr; } }
 .clinician .title-row { margin-bottom: 18px; align-items: center; } .clinician .title-row h1 { margin: 0; }
+.chat { padding: 0; overflow: hidden; }
+.chat-log { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; }
+.msg { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: 14.5px; line-height: 1.5; }
+.msg.bot { background: #f3f1ea; align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg.me { background: var(--teal); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg ul { margin: 6px 0; padding-left: 18px; } .msg .row { margin-top: 8px; gap: 8px; } .msg .err { color: var(--bad); }
+.chat-input { display: flex; gap: 8px; border-top: 1px solid var(--line); padding: 12px; background: #fcfbf8; }
+.chat-input input { flex: 1; }
+.try-row { margin: -6px 0 18px; justify-content: flex-end; }

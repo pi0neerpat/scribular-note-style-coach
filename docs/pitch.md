@@ -48,37 +48,25 @@ Timings measured on the build laptop (Apple M5, 16 GB, `gemma4:e4b`). These are 
 
 Start on **New template**.
 
-### 1:30–2:15 · Build a template from one example
+### 1:30–2:00 · Saved templates, then write a note
 
-- Choose **or use a sample… → Narrative therapy: three-part note**, name it `Narrative notes`, and click **Next**.
-  > "The therapist pastes one note they like. It reads the *style* (sections, length, voice, quotes). Patient details from the example aren't kept."
-- Point at **Next Actions → only if discussed**. Click **Build template**.
-  > "Now the AI on this laptop practices on a fictional session, checks its own work, and fixes problems."
-- It opens the template with a sample note on a session it hasn't seen.
-  > "This is a draft. Nothing is used until the therapist saves it."
-- If *1 thing to review* appears (often a *Next Actions: None* placeholder), open it:
-  > "It checks every quote word for word, and who said it, and when the model slips, it tells you."
+- Point at the sidebar: **Saved note templates** (Narrative, SOAP, DAP are preloaded).
+- Click **✎ Write session note**, choose a transcript from the dated list, pick a **Note template**, and click **Write note** (~5 s).
+  > "After a session, the therapist picks the transcript and their template, and gets a note in their own style, generated on this laptop."
 
-### 2:15–2:45 · Save it
+### 2:00–2:45 · Build a new template from one example
 
-- Click **Save and activate**. The template moves to **Saved note templates** on the left.
-  > "Now it's one of their saved templates, ready for every session."
+- Click **+ New template**, choose **or use a sample… → Brief CBT note**, name it `CBT brief`, and click **Build** (~5–10 s).
+  > "Paste one note you like and click Build. The AI on this laptop learns the style, practices, checks itself, and writes a sample note."
 
-### 2:45–3:15 · After a session: choose the template
+### 2:45–3:45 · Chat to adjust, then Save
 
-- Click **✎ Write session note**. Choose a session (for example **Internal Family Systems (IFS) session**), pick **Narrative notes**, and click **Write note** (~5 s).
-  > "After a session, the therapist picks the transcript, chooses their template, and gets a note in their own style, generated on this laptop. Copy it into the record."
+- In the chat, type `Keep each section to two sentences.` and press Enter. It answers with the exact change (max sentences 3 → 2). Click **Apply** (~5 s) to see before and after.
+  > "They just say what they want. It shows the change first, and nothing is used until they save."
+- Optional: type `Add a section called Risk` → **Apply**.
+- Click **Save**. The template joins **Saved note templates**.
 
-### 3:15–4:00 · Improve it in plain English
-
-- Click **Improve template** and type **exactly**: `Keep each section to two sentences.` Then click **Suggest update** (~1 s).
-  > "The therapist just says what they want."
-- A *Suggested update* appears in plain English (max sentences 4 → 2). Click **Preview on a new session** (~5 s).
-  > "Before and after, on a brand-new session. It never changes behind your back."
-- Click **Save and activate**. Open **Version history** if it's shown.
-  > "Every version is saved and can be restored."
-
-**Avoid typing "leave out Next Actions…".** The free-text interpreter can't change that rule yet and will answer "no change."
+**Avoid typing "leave out Next Actions…".** The chat can't change that rule yet and will say it can't make that change.
 
 ### 4:00–4:45 · Why this wins (rubric in plain words)
 

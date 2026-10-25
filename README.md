@@ -61,7 +61,7 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
    ./start-demo.sh
    ```
    The script checks Python 3.9+ and Ollama, downloads `gemma4:e4b` the first time (~6.6 GB), starts the server, and opens http://127.0.0.1:8765. If something is missing, it prints what to install.
-3. On **New template**, pick a sample note, click **Next → Build template**, then **Save and activate**. Use **✎ Write session note** to choose a session and a saved template.
+3. Pick a saved note template, or create one under **+ New template** (paste or choose a sample → **Build** → chat changes → **Save**). Use **✎ Write session note** to choose a transcript and a template.
 
 Tested on macOS (Apple M5, 16 GB). Plan for about 8 GB of free memory for the model. Windows has not been tested; run `python app\server.py` with Ollama running if you want to try.
 
@@ -86,13 +86,12 @@ The imported host variant `gemma-4-E2B-it.gguf:latest` (Q4_K_M) on Ollama 0.20.5
 
 ### What you can do
 
-The UI is a clinician app with a left sidebar of **Saved note templates**.
+The UI is a clinician app with a left sidebar of **Saved note templates**. Three starter templates (Narrative, SOAP, DAP) are preloaded on first launch; set `COACH_STARTERS=0` to start empty.
 
-1. **New template**: paste a note or load a `.txt`/`.md` file (or pick one of four fictional samples), then name it and choose the session type. Confirm the extracted settings (sections, which ones appear "only if discussed", length, quotes, voice, pronouns). Or start from a built-in default.
-2. **Build**: the local model practices on fictional development transcript **A**: up to 3 attempts, with live phases and cancel. The template then opens as a draft and automatically writes a sample note on a separate practice session.
-3. **Save and activate**: the template moves to **Saved note templates**. Clicking it later lets you try it again, edit its settings (saving creates a new version), review suggested updates, and restore earlier versions.
-4. **Write session note**: after a session, choose the session transcript (fictional demo sessions from the session library) and a saved template, then **Write note**. You can copy the note, edit it, use *Fix this note* (a one-off correction that leaves the template unchanged), or use *Improve template*.
-5. **Improve template**: plain-language feedback is interpreted locally into a bounded settings change (or a clarifying question). You review it, preview before/after on a fresh session, and then **Save and activate** or **Reject**.
+1. **New template**: paste a note you like, upload a `.txt`/`.md` file, or pick a fictional sample. Name it and click **Build**. The local model reads the style, practices on fictional transcript **A** (up to 3 attempts), and writes a sample note on a separate practice transcript.
+2. **Chat to adjust**: on the template page, type changes in plain language (for example "Keep each section to two sentences" or "Add a section called Risk"). Each change is shown first and applied only when you click **Apply**, with a before/after. **Save** makes it active; **Undo change** rejects it.
+3. **Write session note**: choose a transcript (fictional demo transcripts, listed by date and time) and a saved **Note template**, then **Write note**. You can copy, edit, use *Fix this note* (a one-off correction), or use *Improve template*.
+4. Saved templates can be reopened from the sidebar to chat further changes, try other transcripts, or restore earlier versions.
 
 Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
 

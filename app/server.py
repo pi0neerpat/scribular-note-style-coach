@@ -520,7 +520,23 @@ class Handler(BaseHTTPRequestHandler):
 
 
 
+STARTERS = (("narrative-three-part", "Narrative notes"), ("soap-structured", "SOAP note"), ("dap-concise", "DAP note"))
+
+
+def seed_starters():
+    """Preload three active note templates from the fictional sample notes (first launch only)."""
+    if store.data["styles"] or os.environ.get("COACH_STARTERS", "1") == "0":
+        return
+    samples = {x["id"]: x["text"] for x in coach.load_samples()}
+    for sample_id, name in STARTERS:
+        prefs = coach.extract_preferences(samples[sample_id], name)["preferences"]
+        style = store.create_style(name, "starter", "narrative")
+        v = store.add_version(style["id"], prefs, coach.compile_prompt(prefs), "Built-in starter template.")
+        store.activate(v["id"])
+
+
 def main():
+    seed_starters()
     info = ollama.runtime_info()
     print("Note-Style Coach on http://%s:%d  (data: %s)" % (HOST, PORT, store.dir))
     print("Model: %s  available=%s  %s" % (info["model"], info["available"], info.get("error", "")))
