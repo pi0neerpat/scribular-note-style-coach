@@ -18,14 +18,83 @@
         "simulation": "general-b",
         "fresh": "general-c"
       }
+    },
+    {
+      "id": "couples",
+      "label": "Couples therapy session",
+      "fixtures": {
+        "development": "couples-a",
+        "simulation": "couples-b",
+        "fresh": "couples-c"
+      }
     }
   ],
   "fixtures": {
-    "narrative-a": {"version": 1, "file": "narrative-a.txt", "names": ["Priya"], "explicitNextActions": true},
-    "narrative-b": {"version": 1, "file": "narrative-b.txt", "names": ["Tomas"], "explicitNextActions": false},
-    "narrative-c": {"version": 1, "file": "narrative-c.txt", "names": ["Ruth"], "explicitNextActions": true},
-    "general-a": {"version": 1, "file": "general-a.txt", "names": ["Jordan"], "explicitNextActions": true},
-    "general-b": {"version": 1, "file": "general-b.txt", "names": ["Sam"], "explicitNextActions": false},
-    "general-c": {"version": 1, "file": "general-c.txt", "names": ["Lena"], "explicitNextActions": true}
+    "narrative-a": {
+      "version": 1,
+      "file": "narrative-a.txt",
+      "names": [
+        "Priya"
+      ],
+      "explicitNextActions": true
+    },
+    "narrative-b": {
+      "version": 1,
+      "file": "narrative-b.txt",
+      "names": [
+        "Tomas"
+      ],
+      "explicitNextActions": false
+    },
+    "narrative-c": {
+      "version": 1,
+      "file": "narrative-c.txt",
+      "names": [
+        "Ruth"
+      ],
+      "explicitNextActions": true
+    },
+    "general-a": {
+      "version": 1,
+      "file": "general-a.txt",
+      "names": [
+        "Jordan"
+      ],
+      "explicitNextActions": true
+    },
+    "general-b": {
+      "version": 1,
+      "file": "general-b.txt",
+      "names": [
+        "Sam"
+      ],
+      "explicitNextActions": false
+    },
+    "general-c": {
+      "version": 1,
+      "file": "general-c.txt",
+      "names": [
+        "Lena"
+      ],
+      "explicitNextActions": true
+    },
+    "couples-a": {
+      "version": 1,
+      "file": "couples-a.txt",
+      "names": [],
+      "explicitNextActions": true
+    },
+    "couples-b": {
+      "version": 1,
+      "file": "couples-b.txt",
+      "names": [],
+      "explicitNextActions": false
+    },
+    "couples-c": {
+      "version": 1,
+      "file": "couples-c.txt",
+      "names": [],
+      "explicitNextActions": true
+    }
   }
 }

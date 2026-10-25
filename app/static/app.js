@@ -1,15 +1,6 @@
 // Note-Style Coach — four-screen local demo UI. No external requests.
 "use strict";
 
-const SAMPLE_NOTE = `Client Discussed:
-The client reported feeling worn down after a family gathering and described a familiar sense of "not measuring up." The client explored how this story tends to show up most around holidays. The client expressed hope about "taking up a little more space" this year.
-
-Therapist Contribution:
-The therapist used externalization, inviting the client to name the problem "the Measuring Stick." The therapist asked relative influence questions about when the Measuring Stick has less pull. A unique outcome was identified when the client described setting a boundary with a relative.
-
-Next Actions:
-The client chose to notice moments when the Measuring Stick is quiet before the next session.`;
-
 const S = {
   screen: "why", data: null,
   example: "", noteType: "narrative", name: "My narrative note style",
@@ -174,7 +165,7 @@ function renderUpload() {
         <textarea id="example" placeholder="Paste a note you like here…" style="min-height:220px">${esc(S.example)}</textarea>
         <div class="row" style="margin-top:8px">
           <input type="file" id="file" accept=".txt,.md,text/plain,text/markdown">
-          <button class="btn" data-act="sample">Use a fictional example</button>
+          <select id="sample-pick" style="width:auto"><option value="">Load a fictional sample note…</option>${d.samples.map((x) => `<option value="${x.id}">${esc(x.label)}</option>`).join("")}</select>
         </div>
         <p class="small">Supported: paste, .txt, .md. PDF and Word are not supported yet. Everything stays on this computer.</p>
         <div class="grid half">
@@ -468,6 +459,13 @@ async function loadCompare(vid) {
 // ------------------------------------------------------------ actions
 document.addEventListener("change", (e) => {
   const t = e.target;
+  if (t.id === "sample-pick" && t.value) {
+    captureUploadForm();
+    const sample = S.data.samples.find((x) => x.id === t.value);
+    S.example = sample.text; S.extract = null; S.prefs = null;
+    S.name = sample.label.split(/[:(]/)[0].trim() + " style";
+    return render();
+  }
   if (t.classList && t.classList.contains("fbtag") && t.checked && (t.value === "too_long" || t.value === "omitted_content")) {
     const other = document.querySelector(`.fbtag[value=${t.value === "too_long" ? "omitted_content" : "too_long"}]`);
     if (other) other.checked = false;
@@ -483,7 +481,7 @@ document.addEventListener("click", async (e) => {
   const act = el.dataset.act, id = el.dataset.id;
   try {
     if (act === "goto") { captureUploadForm(); go(el.dataset.to); }
-    else if (act === "sample") { captureUploadForm(); S.example = SAMPLE_NOTE; render(); }
+
     else if (act === "extract") {
       captureUploadForm();
       S.extract = await api("/api/extract", { text: S.example, name: S.name });

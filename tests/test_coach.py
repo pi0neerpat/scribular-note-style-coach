@@ -87,6 +87,26 @@ The client will call Marisol on Sunday."""
             self.assertNotIn(fact, str(prefs))
 
 
+class Samples(unittest.TestCase):
+    def test_every_sample_note_parses_with_optional_last_section(self):
+        samples = coach.load_samples()
+        self.assertEqual(len(samples), 4)
+        for x in samples:
+            self.assertTrue(x["text"].startswith("FICTIONAL SAMPLE NOTE"), x["id"])
+            secs = coach.extract_preferences(x["text"])["preferences"]["sections"]
+            self.assertGreaterEqual(len(secs), 3, x["id"])
+            self.assertFalse(secs[-1]["required"], x["id"])
+            self.assertTrue(all(s["required"] for s in secs[:-1]), x["id"])
+
+    def test_every_fixture_is_labeled_fictional(self):
+        m = coach.load_fixture_manifest()
+        for fid, meta in m["fixtures"].items():
+            first = (coach.FIXTURE_DIR / meta["file"]).read_text().splitlines()[0]
+            self.assertTrue(first.startswith("FICTIONAL TRANSCRIPT"), fid)
+        for nt in m["noteTypes"]:
+            self.assertEqual(len(set(nt["fixtures"].values())), 3, "A, B and C must be different transcripts")
+
+
 class Compilation(unittest.TestCase):
     def test_grounding_survives_every_feedback_change(self):
         new, changes, _ = coach.apply_feedback(PREFS, list(coach.FEEDBACK_TAGS), "Keep it warm.", {"name": "Diagnosis"})

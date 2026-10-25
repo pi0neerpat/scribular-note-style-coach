@@ -60,7 +60,7 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
    ./start-demo.sh
    ```
    The script checks Python 3.9+ and Ollama, downloads `gemma4:e4b` the first time (~6.6 GB), starts the server, and opens http://127.0.0.1:8765. If something is missing, it prints what to install.
-3. Click **Create my note style → Use a fictional example → Read my style → Create my template** and continue through the four steps.
+3. Click **Create my note style → Load a fictional sample note → Read my style → Create my template** and continue through the four steps.
 
 Tested on macOS (Apple M5, 16 GB). Plan for about 8 GB of free memory for the model. Windows has not been tested; run `python app\server.py` with Ollama running if you want to try.
 
@@ -84,12 +84,30 @@ Options: `COACH_MODEL` (default `gemma4:e4b`), `COACH_PORT` (default `8765`), `C
 ### What you can do
 
 0. **Why**: problem statement, value proposition, and solution.
-1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or click *Use a fictional example*), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
+1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or pick one of four fictional samples in `examples/sample-notes/`), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
 2. **Preparing your template**: real phases, attempt count (up to 3: one first try plus at most two targeted revisions), elapsed time, and cancel/retry. Runs on fictional development transcript **A**.
 3. **Template Control**: the draft and its practice checks, a preference editor, an advanced prompt editor (the fixed grounding rules can't be removed), version history, approve/activate, and restore.
 4. **Main Meeting: Simulation**: fictional transcript **B** (never used for refinement) and a real local note. From there you can accept (and activate), *edit this note only*, or *improve my template*. Choosing *Apply to future notes* creates a **proposed** version, which is previewed against the current version on untouched transcript **C**. You then approve, defer, or reject it. Once feedback on B shapes the template, B is recorded as development evidence.
 
 Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
+
+### Fictional sample content
+
+All of the following was written for this demo. None of it describes a real person or session.
+
+- **Sample notes** for the upload step (`examples/sample-notes/`, also available from the *Load a fictional sample note* dropdown):
+  - narrative three-part
+  - DAP (Data/Assessment/Plan)
+  - SOAP (Subjective/Objective/Assessment/Plan)
+  - brief CBT with Homework
+
+  The style reader detects each one's sections, and in each the last plan-like section is optional.
+- **Transcripts** (`fixtures/`): three note types, each with a development transcript A, a simulation transcript B, and a fresh transcript C:
+  - narrative therapy
+  - general/CBT-informed
+  - couples therapy
+
+  B transcripts never include an agreed next step, so they test the omission rule. Gemma 4 sometimes writes a placeholder ("Homework: Omitted", "Plan: No plan was explicitly stated") and the check flags it. This is a useful moment to demonstrate *Improve my template*.
 
 ### Repository layout
 
@@ -98,7 +116,8 @@ Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
 - `app/store.py` — local JSON store: styles, versions (content fixed after creation; approval-state history appended), runs with prompt snapshot + runtime + fixture provenance + purpose, content-free event log.
 - `app/ollama.py` — loopback-only Ollama client, context-budget check, pinned options.
 - `app/static/` — the UI (plain HTML/CSS/JS, no external requests).
-- `fixtures/` — six newly written **fictional** transcripts (A/B/C for two note types).
+- `fixtures/` — nine newly written **fictional** transcripts (A/B/C for three note types).
+- `examples/sample-notes/` — four fictional example notes in different styles.
 - `tests/`, `scripts/e2e_demo_check.py` — automated checks (below).
 
 Inspect AI and Phoenix are not used in this demo. They remain optional development-evaluation tools.
@@ -108,7 +127,7 @@ Inspect AI and Phoenix are not used in this demo. They remain optional developme
 Run on October 25, 2026. Machine: Apple M5, 16 GB RAM, macOS 26.6. Runtime: Ollama 0.40.11 with `gemma4:e4b` (digest `eb2177adf764…`). Settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off.
 
 ```bash
-python3 -m unittest discover -s tests          # 18 tests, OK (no model needed)
+python3 -m unittest discover -s tests          # 20 tests, OK (no model needed)
 COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &   # fresh data dir
 python3 scripts/e2e_demo_check.py              # ALL E2E CHECKS PASSED (real inference)
 ```

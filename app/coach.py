@@ -114,6 +114,25 @@ def load_fixture_manifest():
     return json.loads((FIXTURE_DIR / "fixtures.json").read_text())
 
 
+SAMPLE_DIR = ROOT / "examples" / "sample-notes"
+SAMPLE_LABELS = {
+    "narrative-three-part": "Narrative therapy: three-part note",
+    "dap-concise": "DAP note (Data, Assessment, Plan)",
+    "soap-structured": "SOAP note (Subjective, Objective, Assessment, Plan)",
+    "cbt-brief": "Brief CBT note with homework",
+}
+
+
+def load_samples():
+    """Fictional example notes shipped for the demo upload step."""
+    out = []
+    for key, label in SAMPLE_LABELS.items():
+        f = SAMPLE_DIR / (key + ".md")
+        if f.exists():
+            out.append({"id": key, "label": label, "text": f.read_text()})
+    return out
+
+
 def load_transcript(fixture_id):
     """Return transcript text without the fictional-label header line."""
     meta = load_fixture_manifest()["fixtures"][fixture_id]
@@ -166,7 +185,7 @@ def extract_preferences(example_text, name="My note style"):
         return {"preferences": prefs, "uncertain": uncertain, "detected": {"sections": 0}}
 
     last_heading = sections[-1][0].lower()
-    optional_last = any(k in last_heading for k in ("next", "plan", "follow")) and len(sections) > 1
+    optional_last = any(k in last_heading for k in ("next", "plan", "follow", "homework")) and len(sections) > 1
     core = sections[:-1] if optional_last else sections
     counts = [len(_sentences(b)) for _, b in core if b]
     lo = max(1, min(counts)) if counts else 2
@@ -317,7 +336,7 @@ def check_note(output, prefs, fixture_meta, transcript):
         if s.get("required", True):
             continue
         present = s["name"].lower() in found
-        if not re.search(r"next|plan|follow|action|step", s["name"], re.I):
+        if not re.search(r"next|plan|follow|action|step|homework", s["name"], re.I):
             if s["name"] in placeholders:
                 add("optional_omission", False, "'%s' has a placeholder; it should be omitted when nothing was stated." % s["name"])
             else:
