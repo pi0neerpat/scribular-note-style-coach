@@ -263,7 +263,7 @@ function renderControl() {
             <span class="small">Active version: ${active ? `v${active.version}` : "none yet — approve a version to use it for future notes"}</span></div>
           <div class="row">
             ${v.state === "draft" ? `<button class="btn primary" data-act="activate" data-id="${v.id}">Approve &amp; activate</button>` : ""}
-            ${v.state !== "rejected" ? `<button class="btn ${v.state === "active" ? "primary" : ""}" data-act="simulate" data-id="${v.id}">Try in a simulated session</button>` : ""}
+            ${v.state !== "rejected" ? `${sessionPicker()}<button class="btn ${v.state === "active" ? "primary" : ""}" data-act="simulate" data-id="${v.id}">Try in a simulated session</button>` : ""}
           </div>
         </div>
         <p>${esc(v.explanation)}</p>
@@ -287,6 +287,16 @@ function renderControl() {
     </div>
   </div>`;
 }
+
+function sessionPicker() {
+  const lib = S.data.library || [];
+  return `<select id="sess-pick" style="width:auto;max-width:330px" title="Which fictional session to simulate">
+    <option value="">Next fresh fictional session (recommended)</option>
+    <optgroup label="Session library: team samples, not held out">
+      ${lib.map((x) => `<option value="${x.id}" ${S.simLib === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
+    </optgroup></select>`;
+}
+const sessionLabel = (fid) => ((S.data.library || []).find((x) => x.id === fid) || {}).label || fid;
 
 function defaultsCard() {
   return `<div class="card"><h2>Built-in defaults</h2>${S.data.defaults.map((x) => `<div class="list-item"><b>${esc(x.label)}</b><div class="small">${esc(x.description)}</div><button class="btn" style="margin-top:6px" data-act="use-default" data-id="${x.id}">Start from this</button></div>`).join("")}</div>`;
@@ -334,7 +344,7 @@ function renderMeeting() {
   <div class="simbar"><span class="live"></span>Simulated session — fictional transcript, note generated locally on this computer. Not a real client, and not counted as a real session.</div>
   ${S.simWarning ? `<div class="notice">${esc(S.simWarning)}</div>` : ""}
   <div class="grid half">
-    <div class="card"><h2>Session transcript ${r ? `<span class="badge sim">${esc(r.fixtureId)}</span>` : ""}</h2>
+    <div class="card"><h2>Session transcript ${r ? `<span class="badge sim">${esc(sessionLabel(r.fixtureId))}</span>` : ""}</h2>
       ${r ? `<pre class="transcript">${esc(r.transcript)}</pre>` : `<p class="small"><span class="spinner"></span>The session note is being written. The transcript appears with it.</p>`}</div>
     <div class="card">
       <h2>Session note</h2>
@@ -355,7 +365,7 @@ function renderMeeting() {
           <button class="btn" data-act="sim-mode" data-m="edit">Edit this note only</button>
           <button class="btn" data-act="sim-mode" data-m="improve">Improve my template</button>
         </div>
-        <div class="row" style="margin-top:8px"><button class="btn" data-act="simulate" data-id="${v.id}">Run another simulated session</button></div>`}` : ""}
+        <div class="row" style="margin-top:8px">${sessionPicker()}<button class="btn" data-act="simulate" data-id="${v.id}">Run another simulated session</button></div>`}` : ""}
     </div>
   </div>`;
 }
@@ -438,8 +448,9 @@ async function startPrep(inputs) {
   render();
 }
 
-async function startSim(versionId) {
-  const { jobId } = await api("/api/simulate", { versionId });
+async function startSim(versionId, libraryId) {
+  if (libraryId !== undefined) S.simLib = libraryId || null;
+  const { jobId } = await api("/api/simulate", { versionId, libraryId: S.simLib });
   S.simRun = null; S.simWarning = null; S.simMode = null;
   S.simJob = { id: jobId, status: "queued", log: [], elapsed: 0, versionId };
   go("meeting");
@@ -529,7 +540,7 @@ document.addEventListener("click", async (e) => {
       S.flash = { kind: "info", text: "Saved as a new draft. Your active template is unchanged until you approve this draft." };
       render();
     }
-    else if (act === "simulate") await startSim(id);
+    else if (act === "simulate") await startSim(id, $("#sess-pick") ? $("#sess-pick").value : undefined);
     else if (act === "sim-mode") { S.simMode = el.dataset.m || null; render(); }
     else if (act === "save-note-edit") {
       await api(`/api/runs/${S.simRun.id}/feedback`, { accepted: false, scope: "note_only", tags: [], editedNote: $("#note-edit").value });

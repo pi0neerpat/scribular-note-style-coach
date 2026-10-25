@@ -168,11 +168,15 @@ def prepare_job(job, prefs, note_type, name):
     return {"styleId": style["id"], "versionId": v["id"], "runId": best_run["id"]}
 
 
-def simulate_job(job, version_id):
+def simulate_job(job, version_id, library_id=None):
     v = store.version(version_id)
     style = store.style(v["styleId"])
-    fid, role = untouched_fixture(style["noteType"])
     warning = None
+    if library_id:
+        fid, role = library_id, "library"
+        warning = "Library session: a fictional sample transcript from the team. It is useful for trying the style on different modalities, but it is not a held-out check."
+    else:
+        fid, role = untouched_fixture(style["noteType"])
     if fid is None:
         nt = next(n for n in coach.load_fixture_manifest()["noteTypes"] if n["id"] == style["noteType"])
         fid, role = nt["fixtures"]["simulation"], "simulation"
@@ -180,7 +184,8 @@ def simulate_job(job, version_id):
     job.max_iterations = 1
     job.iteration = 1
     store.event("simulation_started", runAlias=job.id, versionId=version_id, fixtureId=fid)
-    job.set_phase("Loaded fictional session transcript (%s)" % fid)
+    label = coach.load_fixture_manifest()["fixtures"][fid].get("label")
+    job.set_phase("Loaded fictional session transcript (%s)" % (label or fid))
     job.set_phase("Writing the session note locally with %s v%d" % (style["name"], v["version"]))
     run = generate_run(job, v, fid, "simulation", role, version_id)
     store.event("simulation_finished", runId=run["id"], outcome="success", durationMs=run["durationMs"])
@@ -231,6 +236,7 @@ def state_view():
         "checkLabels": coach.CHECK_LABELS,
         "groundingBlock": coach.GROUNDING_BLOCK,
         "samples": coach.load_samples(),
+        "library": [{"id": f, "label": manifest["fixtures"][f]["label"]} for f in manifest["library"]["sessions"]],
         "runtime": ollama.runtime_info(),
     }
 
@@ -373,7 +379,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.err("Choose a template version first.")
             if v["state"] == "rejected":
                 return self.err("This version was rejected.")
-            job = start_job("simulate", simulate_job, v["id"])
+            lib = b.get("libraryId")
+            manifest = coach.load_fixture_manifest()
+            if lib and lib not in manifest["library"]["sessions"]:
+                return self.err("Unknown library session.")
+            job = start_job("simulate", simulate_job, v["id"], lib or None)
             return self.send_json({"jobId": job.id})
 
         m = re.match(r"^/api/runs/([\w-]+)/feedback$", path)

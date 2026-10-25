@@ -8,7 +8,7 @@ import urllib.request
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 MODEL = os.environ.get("COACH_MODEL", "gemma4:e4b")
-OPTIONS = {"temperature": 0.2, "top_p": 0.9, "seed": 42, "num_ctx": 4096, "num_predict": 700}
+OPTIONS = {"temperature": 0.2, "top_p": 0.9, "seed": 42, "num_ctx": 8192, "num_predict": 700}
 
 
 class Cancelled(Exception):
