@@ -61,7 +61,7 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
    ./start-demo.sh
    ```
    The script checks Python 3.9+ and Ollama, downloads `gemma4:e4b` the first time (~6.6 GB), starts the server, and opens http://127.0.0.1:8765. If something is missing, it prints what to install.
-3. Click **Create my note style → Use a fictional example → Read my style → Create my template** and continue through the four steps.
+3. Click **Create my note style → Load a fictional sample note → Read my style → Create my template** and continue through the four steps.
 
 Tested on macOS (Apple M5, 16 GB). Plan for about 8 GB of free memory for the model. Windows has not been tested; run `python app\server.py` with Ollama running if you want to try.
 
@@ -87,12 +87,30 @@ The imported host variant `gemma-4-E2B-it.gguf:latest` (Q4_K_M) on Ollama 0.20.5
 ### What you can do
 
 0. **Why**: problem statement, value proposition, and solution.
-1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or click *Use a fictional example*), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
+1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or pick one of four fictional samples in `examples/sample-notes/`), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
 2. **Preparing your template**: real phases, attempt count (up to 3: one first try plus at most two targeted revisions), elapsed time, and cancel/retry. Runs on fictional development transcript **A**.
 3. **Template Control**: the draft and its practice checks, a preference editor, an advanced prompt editor (the fixed grounding rules can't be removed), version history, approve/activate, and restore.
 4. **Main Meeting: Simulation**: fictional transcript **B** (initially separate from refinement) and a real local note. From there you can accept (and activate), *edit this note only*, or *improve my template*. Choosing future-style feedback marks B as development evidence and asks the local model for a bounded patch. Vague feedback gets a focused clarification. Review and confirm the patch before it creates a proposed version; only then is a fresh fixture selected for preview. Activation remains a separate explicit action. *Retry this note* regenerates the same source with an ephemeral correction, marks it as development evidence, and leaves style versions/activation intact.
 
 Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
+
+### Fictional sample content
+
+All of the following was written for this demo. None of it describes a real person or session.
+
+- **Sample notes** for the upload step (`examples/sample-notes/`, also available from the *Load a fictional sample note* dropdown):
+  - narrative three-part
+  - DAP (Data/Assessment/Plan)
+  - SOAP (Subjective/Objective/Assessment/Plan)
+  - brief CBT with Homework
+
+  The style reader detects each one's sections, and in each the last plan-like section is optional.
+- **Transcripts** (`fixtures/`): three note types, each with a development transcript A, a simulation transcript B, and a fresh transcript C:
+  - narrative therapy
+  - general/CBT-informed
+  - couples therapy
+
+  B transcripts never include an agreed next step, so they test the omission rule. Gemma 4 sometimes writes a placeholder ("Homework: Omitted", "Plan: No plan was explicitly stated") and the check flags it. This is a useful moment to demonstrate *Improve my template*.
 
 ### Repository layout
 
@@ -101,7 +119,8 @@ Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
 - `app/store.py` — local JSON store: styles, versions (content fixed after creation; approval-state history appended), runs with prompt snapshot + runtime + fixture provenance + purpose, content-free event log.
 - `app/ollama.py` — local/private-opt-in Ollama client, context-budget check, redirects/proxies disabled, pinned options.
 - `app/static/` — the UI (plain HTML/CSS/JS, no external requests).
-- `fixtures/` — six newly written **fictional** transcripts (A/B/C for two note types).
+- `fixtures/` — nine newly written **fictional** transcripts (A/B/C for three note types).
+- `examples/sample-notes/` — four fictional example notes in different styles.
 - `tests/`, `scripts/e2e_demo_check.py` — automated checks (below).
 
 Inspect AI and Phoenix are not used in this demo. They remain optional development-evaluation tools.
@@ -113,24 +132,21 @@ The feedback/retry API contract is documented in [docs/coach-backend.md](docs/co
 ### Verification commands
 
 ```bash
-python3 -m unittest discover -s tests          # 38 tests passed in the parent verification run (fake inference for control paths)
+python3 -m unittest discover -s tests          # 41 tests passed on the merged source (fake inference for control paths)
 node --check app/static/app.js
 python3 -m py_compile app/*.py scripts/smoke_conversational.py
 git diff --check
-COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &
-python3 scripts/e2e_demo_check.py              # full real-inference E2E
-python3 scripts/smoke_conversational.py        # real conversational feedback/retry smoke
 ```
 
 ### Existing E4B run
 
-The earlier teammate verification used a client machine with Apple M5, 16 GB RAM, macOS 26.6, Ollama 0.40.11, and the default `gemma4:e4b` (digest prefix `eb2177adf764…`). Its runtime settings were temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off. Keep this result separate from the imported E2B run below.
+The earlier teammate verification used a client machine with Apple M5, 16 GB RAM, macOS 26.6, Ollama 0.40.11, and the default `gemma4:e4b` (digest prefix `eb2177adf764…`). Its runtime settings were temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off. This predates the merged conversational changes; keep this result separate from the imported E2B run below.
 
 Earlier E4B single-run timings were preparation 5–7 s (two attempts), simulation about 2.5 s, and preview about 4.5 s; these were not benchmarks. Its B output wrote `Next Actions: None`, which the omission check flagged. An earlier `gemma2:2b` trial had additional formatting and attribution failures; that is a separate model result.
 
 ### Imported E2B run
 
-The parent ran both scripts with imported `gemma-4-E2B-it.gguf:latest`, digest `1bcd4e9d158c7cdf00143a107500990cb94f957a1ab0de57de9a2a3b9cf0c5d2`, on Ollama 0.20.5. The client VM reported Apple M2 (Virtual), 8 GB RAM, macOS 26.2. **Inference-host hardware was not measured.** Both the full real E2E and the real conversational smoke passed. The smoke verified vague feedback clarification without a version, a validated pending future-style patch followed by confirmation to a proposed but inactive version, and a retry linked to the same source/version while preserving the original.
+Before this merge, the parent ran both scripts with imported `gemma-4-E2B-it.gguf:latest`, digest `1bcd4e9d158c7cdf00143a107500990cb94f957a1ab0de57de9a2a3b9cf0c5d2`, on Ollama 0.20.5. The client VM reported Apple M2 (Virtual), 8 GB RAM, macOS 26.2. **Inference-host hardware was not measured.** Both the full real E2E and the real conversational smoke passed on that source revision. The smoke verified vague feedback clarification without a version, a validated pending future-style patch followed by confirmation to a proposed but inactive version, and a retry linked to the same source/version while preserving the original. The merged source has not yet had a real-inference smoke rerun.
 
 The full E2E drove the HTTP API through this sequence:
 

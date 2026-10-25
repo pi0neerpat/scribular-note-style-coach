@@ -276,6 +276,7 @@ def state_view():
         "feedbackTags": coach.FEEDBACK_TAGS,
         "checkLabels": coach.CHECK_LABELS,
         "groundingBlock": coach.GROUNDING_BLOCK,
+        "samples": coach.load_samples(),
         "runtime": ollama.runtime_info(),
     }
 
