@@ -20,3 +20,6 @@ customer-data/
 outputs/
 logs/
 *.log
+
+# Local demo data: templates, notes, feedback (never commit)
+app/data/

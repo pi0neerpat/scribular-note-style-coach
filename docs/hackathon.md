@@ -50,9 +50,9 @@ Distinguish any mocked UI/checks from actual local-model behavior.
 - [x] Public project foundation prepared.
 - [x] De-identified customer journey and scope documented.
 - [x] Existing delivered prompt reviewed and sanitized.
-- [ ] Runnable tool and setup verified.
-- [ ] Supported runtime/hardware pinned.
-- [ ] End-to-end demo completed.
+- [x] Runnable tool and setup verified on the author's machine (see README Verification); a fresh setup by another teammate is still pending.
+- [x] Supported runtime/hardware pinned: Ollama 0.40.11 + gemma4:e4b on Apple M5 / 16 GB.
+- [x] End-to-end flow completed with real local inference (scripts/e2e_demo_check.py).
 - [ ] Clinician/evaluator results recorded without inflated claims.
 - [ ] Actual team contributions recorded.
 - [ ] Demo video URL added.
