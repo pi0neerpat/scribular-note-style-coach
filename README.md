@@ -30,6 +30,8 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
 
 ## Read the project
 
+- [Claude development instructions](CLAUDE.md).
+
 - [Discovery synthesis and decisions](docs/discovery-notes.md).
 - [Customer journey today](docs/customer-journey-today.md) — de-identified evidence and its limits.
 - [UI screens](docs/ui-screens.md), [data capture](docs/data-capture.md), and [current app findings](docs/current-app-findings.md).
