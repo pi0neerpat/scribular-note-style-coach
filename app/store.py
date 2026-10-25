@@ -36,13 +36,16 @@ class Store:
         if self.path.exists():
             self.data = json.loads(self.path.read_text())
         else:
-            self.data = {"styles": [], "versions": [], "runs": [], "fixtureUse": {}}
+            self.data = {"styles": [], "versions": [], "runs": [], "fixtureUse": {}, "proposals": []}
             self._save()
+        self.data.setdefault("proposals", [])
+        self._save()
 
     def _save(self):
-        tmp = self.path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(self.data, indent=2))
-        os.replace(tmp, self.path)
+        with self.lock:
+            tmp = self.path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self.data, indent=2))
+            os.replace(tmp, self.path)
 
     # -------------------------------------------------- events (no raw text)
     def event(self, etype, **fields):
@@ -62,6 +65,54 @@ class Store:
 
     def run(self, rid):
         return next((r for r in self.data["runs"] if r["id"] == rid), None)
+
+    def proposal(self, pid):
+        return next((p for p in self.data["proposals"] if p["id"] == pid), None)
+
+    def add_proposal(self, **proposal):
+        with self.lock:
+            proposal.setdefault("id", new_id("patch"))
+            proposal.setdefault("createdAt", now())
+            proposal.setdefault("status", "pending")
+            self.data["proposals"].append(proposal)
+            self._save()
+            return proposal
+
+    def decide_proposal(self, proposal_id, decision):
+        if decision not in ("declined", "deferred"):
+            raise ValueError("decision must be declined or deferred")
+        with self.lock:
+            p = self.proposal(proposal_id)
+            if not p or p.get("status") != "pending":
+                raise ValueError("Patch proposal is no longer pending.")
+            p["status"] = decision
+            self._save()
+            return p
+
+    def _proposal_base_is_current(self, style, base_id):
+        if style.get("activeVersionId"):
+            return style["activeVersionId"] == base_id
+        usable = [v for v in self.versions_of(style["id"]) if v.get("state") not in ("rejected", "deferred")]
+        current = max(usable, key=lambda v: v["version"], default=None)
+        return bool(current and current["id"] == base_id)
+
+    def confirm_proposal(self, proposal_id, expected_base_id, preferences, prompt, explanation, change_summary):
+        """Atomically revalidate, materialize one proposed version, and consume its proposal."""
+        with self.lock:
+            p = self.proposal(proposal_id)
+            if not p or p.get("status") != "pending":
+                raise ValueError("Patch proposal is no longer pending.")
+            style = self.style(p.get("styleId"))
+            base = self.version(p.get("baseVersionId"))
+            if (not style or not base or base.get("version") != p.get("baseVersion") or
+                    expected_base_id != base["id"] or not self._proposal_base_is_current(style, base["id"])):
+                raise ValueError("The proposal's base version is stale; review feedback from the current version.")
+            version = self.add_version(style["id"], preferences, prompt, explanation, state="proposed",
+                                       parent_id=base["id"], change_summary=change_summary)
+            p["status"] = "confirmed"
+            p["versionId"] = version["id"]
+            self._save()
+            return version
 
     def versions_of(self, sid):
         return [v for v in self.data["versions"] if v["styleId"] == sid]

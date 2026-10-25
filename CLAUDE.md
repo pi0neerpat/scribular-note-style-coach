@@ -35,6 +35,7 @@ Template Control remains available for future updates. Do not build customer-sty
 - Reuse an adequate maintained framework/library; do not invent an evaluation platform.
 - If a stack is already established in this repo, extend it rather than replacing it to match a preference.
 - Bind local services to loopback by default. No hosted model, hosted judge, or automatic cloud fallback.
+- Ollama defaults to loopback. An explicit private-host opt-in sends note and feedback text to that configured host; configurable routing does not prove same-process residency, and separate-host hardware is unmeasured.
 - Pin one model/configuration and supported demo machine first. Record actual model tag/digest, context/output limits, sampling parameters, runtime version, and hardware.
 - Keep Inspect AI as a development evaluation tool, not a clinician-facing requirement. Phoenix is optional/deferred.
 - Do not require an agent framework or multiple models to implement the loop.

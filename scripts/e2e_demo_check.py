@@ -108,23 +108,31 @@ assert len(call("/api/state")["styles"][0]["versions"]) == 1
 ok("note-only edit left template unchanged")
 
 # Contradictory feedback must not create an empty "new" version
-r = call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future", "tags": ["too_long", "omitted_content"]}, expect=400)
-assert "No template change" in r["error"] and len(call("/api/state")["styles"][0]["versions"]) == 1
-ok("contradictory feedback rejected with explanation; no empty version created")
+j = wait(call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future", "tags": ["too_long", "omitted_content"]})["jobId"])
+assert j["status"] == "completed", j
+r = j["result"]
+assert r["interpretation"]["kind"] == "no_change" and len(call("/api/state")["styles"][0]["versions"]) == 1
+ok("contradictory feedback returned no-change; no empty version created")
 
-# Future feedback -> proposal -> fresh check on C
-r = call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future", "tags": ["too_long", "quote_problem"],
-                                                       "addSection": {"name": "Objective Data"}})
-prop = r["proposalId"]
+# Future feedback -> separate patch review -> explicit confirmation -> fresh check on C
+j = wait(call("/api/runs/%s/feedback" % run["id"], {"accepted": False, "scope": "future",
+                                                       "text": "Please add an optional Objective Data section and keep its content directly grounded in the source.",
+                                                       "addSection": {"name": "Objective Data"}})["jobId"])
+assert j["status"] == "completed", j
+r = j["result"]
+patch = r["patchProposal"]
+assert len(call("/api/state")["styles"][0]["versions"]) == 1
 st = call("/api/state")
 assert st["fixtureUse"]["narrative-b"]["role"] == "development"
 assert st["styles"][0]["activeVersionId"] == v1
+r = call("/api/patch-proposals/%s/confirm" % patch["id"], {"baseVersionId": v1})
+prop = r["proposalId"]
 j = wait(r["jobId"])
 assert j["status"] == "completed", j
 pv = [v for v in call("/api/state")["styles"][0]["versions"] if v["id"] == prop][0]
 assert pv["state"] == "proposed" and pv["parentId"] == v1 and pv["validation"]["fixtureId"] == "narrative-c"
-assert "Objective Data" in pv["prompt"] and pv["changeSummary"]["promptDiff"] and len(pv["changeSummary"]["changes"]) >= 2
-ok("proposal v2 previewed on fresh narrative-c (%.1fs); active still v1; B now marked development" % j["elapsed"])
+assert "Objective Data" in pv["prompt"] and pv["changeSummary"]["promptDiff"]
+ok("confirmed patch v2 previewed on fresh narrative-c (%.1fs); active still v1; B marked development" % j["elapsed"])
 
 # Approve, then rollback
 call("/api/versions/%s/activate" % prop, {})

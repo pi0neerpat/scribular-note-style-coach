@@ -1,10 +1,11 @@
 """Local web server for the note-style coach demo.
 
 Run:  python3 app/server.py   then open http://127.0.0.1:8765
-Binds to loopback only. All content stays in app/data/ on this machine.
+HTTP binds to loopback. Ollama defaults to loopback; explicit private-host routing sends content to that host.
 """
 
 import json
+import hashlib
 import mimetypes
 import os
 import re
@@ -88,19 +89,23 @@ def start_job(kind, fn, *args):
     return job
 
 
-def generate_run(job, version_like, fixture_id, purpose, role, version_id=None):
+def generate_run(job, version_like, fixture_id, purpose, role, version_id=None, correction=None, parent_run_id=None):
     """One real local generation + code checks, recorded as an immutable run."""
     meta = coach.load_fixture_manifest()["fixtures"][fixture_id]
     transcript = coach.load_transcript(fixture_id)
     prompt = version_like["prompt"]
+    effective_prompt = prompt if not correction else prompt + "\n\nNOTE-ONLY CORRECTION (applies only to this retry; does not change style): " + correction
     runtime = ollama.runtime_info()
     if not runtime["available"]:
         raise ollama.GenerationError(runtime.get("error", "Local model unavailable."))
     t0 = time.time()
     base = dict(purpose=purpose, fixtureRole=role, fixtureId=fixture_id, fixtureVersion=meta["version"],
-                versionId=version_id, promptSnapshot=prompt, runtime=runtime, jobId=job.id)
+                versionId=version_id, promptSnapshot=effective_prompt, runtime=runtime, jobId=job.id,
+                promptHash=hashlib.sha256(effective_prompt.encode()).hexdigest(), sourceHash=hashlib.sha256(transcript.encode()).hexdigest(),
+                parentRunId=parent_run_id, retryCorrection=correction,
+                evidenceStatus="reused" if parent_run_id else None)
     try:
-        output, stats = ollama.chat(prompt, coach.user_message(transcript), job.cancel)
+        output, stats = ollama.chat(effective_prompt, coach.user_message(transcript), job.cancel)
     except ollama.Cancelled:
         store.add_run(status="cancelled", durationMs=int((time.time() - t0) * 1000), **base)
         raise
@@ -188,11 +193,51 @@ def simulate_job(job, version_id):
     return {"runId": run["id"], "warning": warning}
 
 
+def interpret_feedback_job(job, run_id, feedback):
+    run = store.run(run_id)
+    if not run or run.get("status") != "completed":
+        raise ValueError("Original completed note is no longer available.")
+    version = store.version(run["versionId"])
+    job.set_phase("Interpreting feedback locally into a bounded preference patch")
+    try:
+        result = coach.interpret_feedback(version["preferences"], feedback["text"], feedback["tags"],
+            feedback["addSection"], lambda system, user: ollama.interpret_feedback(system, user, job.cancel))
+    except ollama.Cancelled:
+        raise
+    except Exception:
+        # Keep malformed local responses and interpreter failures on the normal
+        # no-change path; never let them create a proposal or escape as a broken UI request.
+        result = {"kind": "no_change", "explanation": "Local feedback interpretation failed. No style change was saved."}
+    if job.cancel.is_set():
+        raise ollama.Cancelled()
+    store.update_run(run_id, feedback=feedback["record"])
+    store.event("feedback_submitted", runId=run_id, scope="future", tags=feedback["tags"], accepted=False,
+                hasComment=bool(feedback["text"]))
+    if result["kind"] != "patch":
+        return {"interpretation": result}
+    proposal = store.add_proposal(runId=run_id, styleId=version["styleId"], baseVersionId=version["id"],
+        baseVersion=version["version"], patch=result["patch"], preferences=result["preferences"],
+        explanation=result.get("explanation", ""), status="pending")
+    return {"patchProposal": proposal}
+
+
+def retry_note_job(job, run_id, correction):
+    original = store.run(run_id)
+    if not original or original.get("status") != "completed":
+        raise ValueError("Original completed note is no longer available.")
+    version = store.version(original["versionId"])
+    job.set_phase("Regenerating from the same fictional source with a note-only correction")
+    run = generate_run(job, version, original["fixtureId"], original["purpose"], "retry_reused",
+                       original["versionId"], correction=correction, parent_run_id=run_id)
+    return {"runId": run["id"], "parentRunId": run_id}
+
+
 def proposal_check_job(job, proposal_id, fixture_id):
     prop = store.version(proposal_id)
     style = store.style(prop["styleId"])
     current_id = style["activeVersionId"] or prop["parentId"]
     current = store.version(current_id)
+    store.mark_fixture_development(fixture_id, "confirmed style proposal preview")
     job.max_iterations = 2
     job.iteration = 1
     job.set_phase("Writing a note with the current template on fresh fictional transcript %s" % fixture_id)
@@ -209,7 +254,7 @@ def proposal_check_job(job, proposal_id, fixture_id):
 # ---------------------------------------------------------------- views
 
 def run_summary(r):
-    keys = ("id", "purpose", "fixtureRole", "fixtureId", "versionId", "status", "createdAt", "durationMs", "checks", "feedback")
+    keys = ("id", "purpose", "fixtureRole", "evidenceStatus", "fixtureId", "versionId", "status", "createdAt", "durationMs", "checks", "feedback", "parentRunId", "retryCorrection", "sourceHash", "promptHash")
     return {k: r.get(k) for k in keys}
 
 
@@ -227,6 +272,7 @@ def state_view():
         "defaults": coach.DEFAULT_STYLES,
         "noteTypes": manifest["noteTypes"],
         "fixtureUse": d["fixtureUse"],
+        "patchProposals": d.get("proposals", []),
         "feedbackTags": coach.FEEDBACK_TAGS,
         "checkLabels": coach.CHECK_LABELS,
         "groundingBlock": coach.GROUNDING_BLOCK,
@@ -379,6 +425,30 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             return self.feedback(m.group(1), b)
 
+        m = re.match(r"^/api/runs/([\w-]+)/retry$", path)
+        if m:
+            r = store.run(m.group(1))
+            correction = b.get("correction")
+            if not isinstance(correction, str): return self.err("A note-only correction is required.")
+            correction = correction.strip()
+            if not r or r.get("status") != "completed": return self.err("Choose a completed note to retry.")
+            if not correction or len(correction) > 500: return self.err("A note-only correction of 1–500 characters is required.")
+            if r.get("purpose") != "simulation": return self.err("Only a simulated note can be retried here.")
+            store.mark_fixture_development(r["fixtureId"], "note-only retry requested")
+            job = start_job("note_retry", retry_note_job, r["id"], correction)
+            return self.send_json({"jobId": job.id, "parentRunId": r["id"]})
+
+        m = re.match(r"^/api/patch-proposals/([\w-]+)/confirm$", path)
+        if m:
+            return self.confirm_patch(m.group(1), b)
+        m = re.match(r"^/api/patch-proposals/([\w-]+)/decide$", path)
+        if m:
+            try:
+                p = store.decide_proposal(m.group(1), b.get("decision"))
+            except ValueError as e:
+                return self.err(str(e))
+            return self.send_json({"ok": True, "status": p["status"]})
+
         m = re.match(r"^/api/jobs/([\w-]+)/cancel$", path)
         if m:
             job = jobs.get(m.group(1))
@@ -391,49 +461,52 @@ class Handler(BaseHTTPRequestHandler):
 
     def feedback(self, run_id, b):
         r = store.run(run_id)
-        if not r or r["status"] != "completed":
-            return self.err("No completed run to give feedback on.")
+        if not r or r["status"] != "completed": return self.err("No completed run to give feedback on.")
         scope = b.get("scope") or "note_only"
-        tags = [t for t in (b.get("tags") or []) if t in coach.FEEDBACK_TAGS]
-        text = (b.get("text") or "").strip()[:500]
+        if scope not in ("future", "note_only"): return self.err("scope must be future or note_only")
+        raw_tags = b.get("tags") if isinstance(b.get("tags"), list) else []
+        tags = [t for t in raw_tags if isinstance(t, str) and t in coach.FEEDBACK_TAGS]
+        raw_text = b.get("text") if isinstance(b.get("text"), str) else ""
+        text = raw_text.strip()[:500]
         add_section = b.get("addSection") if isinstance(b.get("addSection"), dict) else None
-
-        proposal = None
-        if scope == "future":
-            v = store.version(r["versionId"])
-            new_prefs, changes, notes = coach.apply_feedback(v["preferences"], tags, text, add_section)
-            new_prompt = coach.compile_prompt(new_prefs)
-            if not changes or new_prompt.strip() == v["prompt"].strip():
-                msg = " ".join(notes) or "Choose a reason, add a section, or write an instruction so there is something to change."
-                return self.send_json({"error": "No template change was proposed. " + msg, "notes": notes}, 400)
-            proposal = (v, new_prefs, new_prompt, changes, notes)
-
         fb = {"accepted": bool(b.get("accepted")), "scope": scope, "tags": tags, "comment": text or None,
               "addedSection": (add_section or {}).get("name") or None, "at": time.strftime("%Y-%m-%dT%H:%M:%S")}
-        fields = {"feedback": fb}
         if b.get("editedNote") is not None:
-            fields["noteEdit"] = {"text": b["editedNote"], "at": fb["at"], "appliesTo": "this note only"}
-        store.update_run(run_id, **fields)
-        store.event("feedback_submitted", runId=run_id, scope=scope, tags=tags, accepted=fb["accepted"], hasComment=bool(text))
-        if proposal is None:
-            return self.send_json({"ok": True})
+            store.update_run(run_id, feedback=fb, noteEdit={"text": b["editedNote"], "at": fb["at"], "appliesTo": "this note only"})
+        if scope != "future":
+            store.update_run(run_id, feedback=fb)
+            return self.send_json({"ok": True, "scope": "note_only"})
+        # Choosing future scope explicitly exposes this fixture before sending its feedback to inference.
+        store.mark_fixture_development(r["fixtureId"], "future-style feedback submitted")
+        job = start_job("feedback_interpretation", interpret_feedback_job, run_id,
+            {"text": text, "tags": tags, "addSection": add_section, "record": fb})
+        return self.send_json({"jobId": job.id, "scope": "future"})
 
-        v, new_prefs, new_prompt, changes, notes = proposal
-        # Feedback on this transcript now shapes the template, so it is no longer held out.
-        store.mark_fixture_development(r["fixtureId"], "feedback informed update")
-        style = store.style(v["styleId"])
-        prop = store.add_version(v["styleId"], new_prefs, new_prompt,
-                                 "Proposed from your feedback on a simulated session.",
-                                 state="proposed", parent_id=v["id"],
-                                 change_summary={"changes": changes, "notes": notes,
-                                                 "promptDiff": coach.prompt_diff(v["prompt"], new_prompt)})
-        store.event("style_update_proposed", versionId=prop["id"], parentId=v["id"], tags=tags)
-        fid, _ = untouched_fixture(style["noteType"], exclude=(r["fixtureId"],))
-        if fid is None:
-            return self.send_json({"proposalId": prop["id"], "jobId": None,
-                                   "warning": "No untouched fictional transcript is left to preview this update."})
-        job = start_job("proposal_check", proposal_check_job, prop["id"], fid)
-        return self.send_json({"proposalId": prop["id"], "jobId": job.id})
+    def confirm_patch(self, proposal_id, b):
+        # Validation, freshness comparison, proposal consumption, and version creation
+        # are serialized by the store RLock. The store method repeats all checks.
+        with store.lock:
+            p = store.proposal(proposal_id)
+            base = store.version(p.get("baseVersionId")) if p else None
+            if not p or not base:
+                return self.err("Patch proposal is no longer available.")
+            try:
+                prefs, changes = coach.apply_typed_patch(base["preferences"], p["patch"])
+                prompt = coach.compile_prompt(prefs)
+                version = store.confirm_proposal(proposal_id, b.get("baseVersionId"), prefs, prompt,
+                    "Confirmed preference patch: " + (p.get("explanation") or "Clinician-confirmed feedback."),
+                    {"changes": changes, "notes": [p.get("explanation", "")],
+                     "promptDiff": coach.prompt_diff(base["prompt"], prompt)})
+            except (TypeError, ValueError) as e:
+                return self.err("This proposal could not be confirmed: " + str(e))
+            style = store.style(version["styleId"])
+            original = store.run(p.get("runId"))
+            fixture, _ = untouched_fixture(style["noteType"], exclude=((original or {}).get("fixtureId"),))
+        if fixture is None:
+            return self.send_json({"proposalId": version["id"], "jobId": None, "warning": "No untouched fictional transcript is left for preview."})
+        job = start_job("proposal_check", proposal_check_job, version["id"], fixture)
+        return self.send_json({"proposalId": version["id"], "jobId": job.id})
+
 
 
 def main():

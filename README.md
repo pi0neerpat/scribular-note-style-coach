@@ -46,6 +46,7 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
 - [De-identified delivered reference prompt](examples/delivered-note-style-reference.md).
 - [Proposed clarified starter prompt](examples/narrative-style-starter.txt).
 - [Synthetic preferences](examples/style-preferences.json).
+- [Ten additional fictional sample transcripts](examples/sample-transcripts/README.md), separate from the A/B/C evaluation fixtures.
 
 ## Run the demo
 
@@ -73,13 +74,15 @@ ollama pull gemma4:e4b                 # ~6.6 GB, needs a recent Ollama (tested:
 python3 app/server.py                  # http://127.0.0.1:8765
 ```
 
-If your Ollama runs somewhere other than `127.0.0.1:11434` (for example a second Ollama next to the one bundled in Scribular.app), set it explicitly. Only loopback addresses are accepted:
+If Ollama runs on another loopback port, set it explicitly. Loopback is the default. An explicitly opted-in private host is also supported; inference content is sent to that configured host, and its hardware is unmeasured:
 
 ```bash
 OLLAMA_URL=http://127.0.0.1:11435 python3 app/server.py
+# Private endpoint only when explicitly opted in:
+COACH_ALLOW_PRIVATE_OLLAMA=1 OLLAMA_URL="http://${OLLAMA_PRIVATE_HOST}:${OLLAMA_PORT}" python3 app/server.py
 ```
 
-Options: `COACH_MODEL` (default `gemma4:e4b`), `COACH_PORT` (default `8765`), `COACH_DATA_DIR` (default `app/data/`, which is git-ignored). Delete the data directory to reset the demo.
+The imported host variant `gemma-4-E2B-it.gguf:latest` (Q4_K_M) on Ollama 0.20.5 is a separate, explicitly selected model. It differs from the README default `gemma4:e4b`; results from these variants are not interchangeable. The inference host hardware is unmeasured. Options: `COACH_MODEL` (default `gemma4:e4b`), `COACH_PORT` (default `8765`), `COACH_DATA_DIR` (default `app/data/`, which is git-ignored). Delete the data directory to reset the demo.
 
 ### What you can do
 
@@ -87,33 +90,49 @@ Options: `COACH_MODEL` (default `gemma4:e4b`), `COACH_PORT` (default `8765`), `C
 1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or click *Use a fictional example*), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
 2. **Preparing your template**: real phases, attempt count (up to 3: one first try plus at most two targeted revisions), elapsed time, and cancel/retry. Runs on fictional development transcript **A**.
 3. **Template Control**: the draft and its practice checks, a preference editor, an advanced prompt editor (the fixed grounding rules can't be removed), version history, approve/activate, and restore.
-4. **Main Meeting: Simulation**: fictional transcript **B** (never used for refinement) and a real local note. From there you can accept (and activate), *edit this note only*, or *improve my template*. Choosing *Apply to future notes* creates a **proposed** version, which is previewed against the current version on untouched transcript **C**. You then approve, defer, or reject it. Once feedback on B shapes the template, B is recorded as development evidence.
+4. **Main Meeting: Simulation**: fictional transcript **B** (initially separate from refinement) and a real local note. From there you can accept (and activate), *edit this note only*, or *improve my template*. Choosing future-style feedback marks B as development evidence and asks the local model for a bounded patch. Vague feedback gets a focused clarification. Review and confirm the patch before it creates a proposed version; only then is a fresh fixture selected for preview. Activation remains a separate explicit action. *Retry this note* regenerates the same source with an ephemeral correction, marks it as development evidence, and leaves style versions/activation intact.
 
 Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
 
 ### Repository layout
 
-- `app/server.py` — loopback HTTP server, background jobs (prepare / simulate / proposal preview) with cancellation.
-- `app/coach.py` — preference extraction, prompt compiler with fixed grounding block, code checks, targeted revisions, feedback-to-proposal mapping.
+- `app/server.py` — loopback HTTP server, background jobs (prepare / simulate / proposal preview / note retry) with cancellation.
+- `app/coach.py` — preference extraction, authoritative deterministic compiler with fixed grounding block, code checks, and strict typed feedback patch validation.
 - `app/store.py` — local JSON store: styles, versions (content fixed after creation; approval-state history appended), runs with prompt snapshot + runtime + fixture provenance + purpose, content-free event log.
-- `app/ollama.py` — loopback-only Ollama client, context-budget check, pinned options.
+- `app/ollama.py` — local/private-opt-in Ollama client, context-budget check, redirects/proxies disabled, pinned options.
 - `app/static/` — the UI (plain HTML/CSS/JS, no external requests).
 - `fixtures/` — six newly written **fictional** transcripts (A/B/C for two note types).
 - `tests/`, `scripts/e2e_demo_check.py` — automated checks (below).
 
 Inspect AI and Phoenix are not used in this demo. They remain optional development-evaluation tools.
 
+The feedback/retry API contract is documented in [docs/coach-backend.md](docs/coach-backend.md).
+
 ## Verification
 
-Run on October 25, 2026. Machine: Apple M5, 16 GB RAM, macOS 26.6. Runtime: Ollama 0.40.11 with `gemma4:e4b` (digest `eb2177adf764…`). Settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off.
+### Verification commands
 
 ```bash
-python3 -m unittest discover -s tests          # 18 tests, OK (no model needed)
-COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &   # fresh data dir
-python3 scripts/e2e_demo_check.py              # ALL E2E CHECKS PASSED (real inference)
+python3 -m unittest discover -s tests          # 38 tests passed in the parent verification run (fake inference for control paths)
+node --check app/static/app.js
+python3 -m py_compile app/*.py scripts/smoke_conversational.py
+git diff --check
+COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &
+python3 scripts/e2e_demo_check.py              # full real-inference E2E
+python3 scripts/smoke_conversational.py        # real conversational feedback/retry smoke
 ```
 
-The end-to-end script drives the HTTP API through this sequence:
+### Existing E4B run
+
+The earlier teammate verification used a client machine with Apple M5, 16 GB RAM, macOS 26.6, Ollama 0.40.11, and the default `gemma4:e4b` (digest prefix `eb2177adf764…`). Its runtime settings were temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off. Keep this result separate from the imported E2B run below.
+
+Earlier E4B single-run timings were preparation 5–7 s (two attempts), simulation about 2.5 s, and preview about 4.5 s; these were not benchmarks. Its B output wrote `Next Actions: None`, which the omission check flagged. An earlier `gemma2:2b` trial had additional formatting and attribution failures; that is a separate model result.
+
+### Imported E2B run
+
+The parent ran both scripts with imported `gemma-4-E2B-it.gguf:latest`, digest `1bcd4e9d158c7cdf00143a107500990cb94f957a1ab0de57de9a2a3b9cf0c5d2`, on Ollama 0.20.5. The client VM reported Apple M2 (Virtual), 8 GB RAM, macOS 26.2. **Inference-host hardware was not measured.** Both the full real E2E and the real conversational smoke passed. The smoke verified vague feedback clarification without a version, a validated pending future-style patch followed by confirmation to a proposed but inactive version, and a retry linked to the same source/version while preserving the original.
+
+The full E2E drove the HTTP API through this sequence:
 
 - extract preferences
 - cancel a preparation (no template is created)
@@ -121,18 +140,20 @@ The end-to-end script drives the HTTP API through this sequence:
 - simulate on B with a real local note
 - accept and activate explicitly
 - make a note-only edit (template unchanged)
-- give *future notes* feedback, which proposes a version previewed on untouched C; the active version is unchanged and B is marked as development evidence
+- request future-style feedback, which creates a separate pending patch; confirm it to create a proposed version and preview against C; the active version is unchanged and B is marked as development evidence
 - approve, then restore v1 (the historical run keeps its prompt snapshot)
 - try to remove the grounding rules in a prompt edit (rejected)
 - confirm run counts: real = 0
 
-Observed on this machine (single runs, not benchmarks):
+Observed during the E2B run (single runs, not benchmarks):
 
-- Preparation took 5–7 s with 2 attempts. The first attempt failed a formatting check and one targeted revision fixed it.
-- A simulated note took about 2.5 s.
-- A proposal preview (two generations) took about 4.5 s.
+- Preparation took 3.9 s with one attempt.
+- Simulation on B took 4.4 s.
+- Confirmed preview on C took 10.5 s.
 
-On fictional transcript B, Gemma 4 wrote `Next Actions: None` instead of omitting the section. The omission check flags this, and the *Improve my template* flow produces a proposed fix. An earlier trial with `gemma2:2b` showed more failures, including numbered headings and a therapist/client attribution mix-up that no code check catches.
+The E2B output on B passed 6 of 8 checks; `optional_omission` and `no_names` failed. These format checks do not establish clinical accuracy or clinician acceptance. There has been no clinician validation or acceptance and no measured time savings.
+
+The ten files in [examples/sample-transcripts](examples/sample-transcripts/README.md) are additional fictional examples, separate from fixtures A/B/C. Their presence does not make them held-out evidence; they are not automatically used by the E2E or conversational smoke.
 
 ## Limitations
 

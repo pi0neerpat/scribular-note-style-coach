@@ -16,9 +16,9 @@ const S = {
   extract: null, prefs: null,
   prepJob: null, prepResult: null, prepInputs: null,
   styleId: null, versionId: null, editPrefs: null, editPrompt: null,
-  proposalJob: null, compare: null,
+  proposalJob: null, compare: null, patchProposal: null, clarification: null, retryCorrection: "", feedbackJob: null,
   simJob: null, simRun: null, simWarning: null, simMode: null,
-  fb: { tags: [], text: "", scope: "future", secName: "", secReq: false },
+  fb: { tags: [], text: "", scope: "note_only", secName: "", secReq: false },
   flash: null,
 };
 
@@ -106,7 +106,7 @@ function renderWhy() {
   <section class="hero">
     <div class="eyebrow">Scribular Note-Style Coach</div>
     <h1>Your note style. Your device. Improvements you control.</h1>
-    <p>Therapists can set up how their AI-drafted notes should read, test it on a practice session, and improve it over time. There's no prompt engineering, no support ticket, and no session data leaves the computer.</p>
+    <p>Therapists can set up how their AI-drafted notes should read, test it on a practice session, and improve it over time. There's no prompt engineering, no support ticket, and session data is sent only to the configured Ollama endpoint.</p>
     <div class="row">
       <button class="btn primary" data-act="goto" data-to="upload">Create my note style →</button>
       <button class="btn ghost" data-act="goto" data-to="control">Start from a default</button>
@@ -134,7 +134,7 @@ function renderWhy() {
     <p class="small" style="max-width:640px;margin:0 auto">Replace founder-mediated prompt engineering with a self-serve flow the clinician runs on their own computer. The clinician keeps the clinical judgment; the software does the translation, testing, and version keeping.</p>
   </div>
 
-  <div class="section-title"><div class="eyebrow">The solution</div><h2>Four steps, all on this computer</h2></div>
+  <div class="section-title"><div class="eyebrow">The solution</div><h2>Four steps, with local Ollama inference</h2></div>
   <div class="grid four">
     <div class="card step-card"><div class="num">1</div><h3>Upload a note you like</h3><p>We read the style: headings, length, voice, and quotes. You confirm anything we're unsure about. Patient details are not kept.</p></div>
     <div class="card step-card"><div class="num">2</div><h3>We prepare your template</h3><p>The local model writes practice notes on a fictional session. Automated checks find formatting problems, and the template is revised up to two times.</p></div>
@@ -153,7 +153,7 @@ function renderWhy() {
 
   <div class="section-title"><div class="eyebrow">Built for trust</div><h2>Designed for clinical notes</h2></div>
   <div class="grid four trust">
-    <div class="card"><div class="icon">🔒</div><h3>Local only</h3><p>Inference runs on ${esc(rt.model)} through Ollama on this machine. There is no hosted model and no cloud fallback.</p></div>
+    <div class="card"><div class="icon">🔒</div><h3>Local only</h3><p>Inference runs on ${esc(rt.model)} through Ollama (${esc(rt.ollamaPlacement || "loopback")}). No cloud fallback is configured.</p></div>
     <div class="card"><div class="icon">📎</div><h3>Grounded</h3><p>Fixed rules forbid invented quotes, interventions, diagnoses, goals, or next actions, and clinician edits can't remove them. Quotes are checked word for word against the transcript.</p></div>
     <div class="card"><div class="icon">✅</div><h3>You approve</h3><p>A saved draft isn't active, and a finished generation isn't approval. Updates are proposed, previewed on a fresh session, then approved or rejected.</p></div>
     <div class="card"><div class="icon">🧭</div><h3>Honest limits</h3><p>The checks cover formatting and consistency, not clinical accuracy. Practice sessions are fictional and never counted as real sessions. No model weights are trained.</p></div>
@@ -176,7 +176,7 @@ function renderUpload() {
           <input type="file" id="file" accept=".txt,.md,text/plain,text/markdown">
           <button class="btn" data-act="sample">Use a fictional example</button>
         </div>
-        <p class="small">Supported: paste, .txt, .md. PDF and Word are not supported yet. Everything stays on this computer.</p>
+        <p class="small">Supported: paste, .txt, .md. PDF and Word are not supported yet. The Ollama endpoint is configurable; private-host routing sends content to that host.</p>
         <div class="grid half">
           <div><label>Note type (picks the fictional practice session)</label>
             <select id="notetype">${d.noteTypes.map((n) => `<option value="${n.id}" ${n.id === S.noteType ? "selected" : ""}>${esc(n.label)}</option>`).join("")}</select></div>
@@ -201,7 +201,7 @@ function renderUpload() {
           <button class="btn" style="margin-top:6px" data-act="use-default" data-id="${x.id}">Use this default</button></div>`).join("")}
       </div>
       <div class="card small">
-        <b>What happens next</b><br>We practice your template on a fictional session and tidy up any formatting issues, using the AI model on this computer. Then you review it. Nothing is activated until you approve it.
+        <b>What happens next</b><br>We practice your template on a fictional session and tidy up any formatting issues, using the configured Ollama model. Then you review it. Nothing is activated until you approve it.
       </div>
     </div>
   </div>`;
@@ -338,9 +338,14 @@ function renderMeeting() {
   const v = version(r ? r.versionId : j.versionId);
   const s = v && style(v.styleId);
   const fb = r && r.feedback;
+  if (r) {
+    const pending = S.data.patchProposals.find((p) => p.runId === r.id && p.status === "pending") || null;
+    if (!S.patchProposal || S.patchProposal.runId !== r.id) S.patchProposal = pending;
+    if (S.clarification && S.clarification.runId && S.clarification.runId !== r.id) S.clarification = null;
+  }
   return `
   <div class="eyebrow">Step 4</div><h1>Main Meeting</h1>
-  <div class="simbar"><span class="live"></span>Simulated session — fictional transcript, note generated locally on this computer. Not a real client, and not counted as a real session.</div>
+  <div class="simbar"><span class="live"></span>Simulated session — fictional transcript, generated through configured local/private Ollama. Not a real client, and not counted as a real session.</div>
   ${S.simWarning ? `<div class="notice">${esc(S.simWarning)}</div>` : ""}
   <div class="grid half">
     <div class="card"><h2>Session transcript ${r ? `<span class="badge sim">${esc(r.fixtureId)}</span>` : ""}</h2>
@@ -357,14 +362,18 @@ function renderMeeting() {
         : `<pre class="note">${esc(r.noteEdit ? r.noteEdit.text : r.output)}</pre>${r.noteEdit ? `<p class="small">Edited by you — this note only. The template was not changed.</p>` : ""}`}
         <p class="small">Generated in ${fmtSecs(r.durationMs / 1000)}.</p>
         ${checksHtml(r.checks)}
-        ${fb ? `<div class="info">Feedback recorded: ${fb.accepted ? "accepted" : "not accepted"}${fb.scope === "future" ? " · proposed an update for future notes" : ""}.</div>` : ""}
+        ${fb ? `<div class="info">Feedback recorded: ${fb.accepted ? "accepted" : "not accepted"}${fb.scope === "future" ? " · reviewed for future note style" : ""}.</div>` : ""}
+        ${S.feedbackJob ? `<div class="notice"><span class="spinner"></span> ${esc(S.feedbackJob.phase || "Interpreting feedback locally")} · ${fmtSecs(S.feedbackJob.elapsed || 0)} <button class="btn danger" data-act="cancel-job" data-id="${S.feedbackJob.id}">Cancel interpretation</button></div>` : ""}
+        ${S.clarification ? `<div class="notice"><b>${esc(S.clarification.question)}</b><div>${(S.clarification.options || []).map((x) => `<button class="btn" data-act="clarify-option" data-value="${esc(x)}">${esc(x)}</button>`).join(" ")}</div></div>` : ""}
+        ${S.patchProposal ? `<div class="card"><h3>Review proposed preference change</h3><p>${esc(S.patchProposal.explanation || "")}</p><ul>${S.patchProposal.patch.map((x) => `<li>${esc(x.path)}: ${esc(JSON.stringify(x.before))} → ${esc(JSON.stringify(x.after))}</li>`).join("")}</ul><p class="small">Confirming creates a proposed version for preview. It will not activate automatically.</p><button class="btn primary" data-act="confirm-patch" ${S.confirmingPatch ? "disabled" : ""}>${S.confirmingPatch ? "Confirming…" : "Confirm proposal"}</button> <button class="btn danger" data-act="decline-patch" ${S.confirmingPatch ? "disabled" : ""}>Decline</button></div>` : ""}
         ${S.simMode === "improve" ? improvePanel() : S.simMode === "edit" ? "" : `
         <div class="row" style="margin-top:12px">
-          <button class="btn primary" data-act="accept">${v.state === "draft" ? "Accept &amp; activate this template" : "Accept this note"}</button>
+          ${r.parentRunId ? `<span class="small">Retry of ${esc(r.parentRunId)} · reused evidence; style unchanged</span><button class="btn primary" data-act="accept">Accept this retry note</button>` : `<button class="btn primary" data-act="accept">${v.state === "draft" ? "Accept &amp; activate this template" : "Accept this note"}</button>`}
           <button class="btn" data-act="sim-mode" data-m="edit">Edit this note only</button>
           <button class="btn" data-act="sim-mode" data-m="improve">Improve my template</button>
         </div>
-        <div class="row" style="margin-top:8px"><button class="btn" data-act="simulate" data-id="${v.id}">Run another simulated session</button></div>`}` : ""}
+        <div class="row" style="margin-top:8px"><button class="btn" data-act="simulate" data-id="${v.id}">Run another simulated session</button><button class="btn" data-act="sim-mode" data-m="retry">Retry this note with a correction</button></div>`}
+        ${S.simMode === "retry" ? `<p class="notice">Retrying uses this source for refinement, so it will be recorded as development evidence and no longer treated as untouched.</p><label>Correction for this note only</label><textarea id="retry-text" placeholder="e.g. Keep exactly one sentence per section"></textarea><button class="btn primary" data-act="retry-note">Generate corrected note</button> <button class="btn" data-act="sim-mode" data-m="">Cancel</button>` : ""}` : ""}
     </div>
   </div>`;
 }
@@ -378,10 +387,10 @@ function improvePanel() {
     <div class="row"><input type="text" id="fb-sec" style="width:260px" placeholder="e.g. Diagnosis, Objective Data" value="${esc(f.secName)}">
       <label style="margin:0;color:var(--ink)"><input type="checkbox" id="fb-sec-req" ${f.secReq ? "checked" : ""}> always include</label></div>
     <p class="small" style="margin:4px 0 0">New sections include only what the session explicitly states. The model never invents diagnoses, codes, or findings.</p>
-    <label>Tell us in your own words (optional; stays on this computer)</label>
+    <label>Tell us in your own words (optional; sent to configured Ollama for interpretation)</label>
     <textarea id="fb-text" style="min-height:60px" placeholder="e.g. Always mention the name the client gave the problem.">${esc(f.text)}</textarea>
     <h3>Apply to future notes?</h3>
-    <label><input type="radio" name="scope" value="future" ${f.scope === "future" ? "checked" : ""}> Yes, propose a template update. I'll review a preview before anything changes.</label>
+    <label><input type="radio" name="scope" value="future" ${f.scope === "future" ? "checked" : ""}> Yes, propose a template update. This simulation will be marked as development evidence; I'll review a preview before activation.</label>
     <label><input type="radio" name="scope" value="note_only" ${f.scope === "note_only" ? "checked" : ""}> No, this feedback is about this note only.</label>
     <div class="row" style="margin-top:10px"><button class="btn primary" data-act="send-feedback">Submit</button><button class="btn" data-act="sim-mode" data-m="">Cancel</button></div>
   </div>`;
@@ -415,7 +424,7 @@ function render() {
   const rt = S.data.runtime, c = S.data.counts;
   $("#status").innerHTML = `${rt.available ? "●" : "○"} Local model <b>${esc(rt.model)}</b>${rt.ollamaVersion ? ` · Ollama ${esc(rt.ollamaVersion)}` : ""}${rt.error ? ` · <span style="color:#ffb4b4">${esc(rt.error)}</span>` : ""}
     &nbsp;|&nbsp; Runs: practice ${c.development} · simulated ${c.simulation} · <b>real sessions ${c.real}</b> (fictional runs are never counted as real)
-    &nbsp;|&nbsp; Nothing leaves this computer`;
+    &nbsp;|&nbsp; No cloud fallback`;
   const f = $("#file");
   if (f) f.onchange = async () => { const file = f.files[0]; if (file) { S.example = await file.text(); render(); } };
 }
@@ -449,7 +458,7 @@ async function startPrep(inputs) {
 
 async function startSim(versionId) {
   const { jobId } = await api("/api/simulate", { versionId });
-  S.simRun = null; S.simWarning = null; S.simMode = null;
+  S.simRun = null; S.simWarning = null; S.simMode = null; S.patchProposal = null; S.clarification = null;
   S.simJob = { id: jobId, status: "queued", log: [], elapsed: 0, versionId };
   go("meeting");
   const j = await poll(jobId, async (j) => { S.simJob = Object.assign(j, { versionId }); if (S.screen === "meeting") render(); });
@@ -540,16 +549,50 @@ document.addEventListener("click", async (e) => {
     else if (act === "accept") {
       const v = version(S.simRun.versionId);
       await api(`/api/runs/${S.simRun.id}/feedback`, { accepted: true, scope: "note_only", tags: [] });
-      if (v.state === "draft") await api(`/api/versions/${v.id}/activate`, {});
+      if (v.state === "draft" && !S.simRun.parentRunId) await api(`/api/versions/${v.id}/activate`, {});
       S.simRun = await api(`/api/runs/${S.simRun.id}`); await refresh();
-      S.flash = { kind: "info", text: v.state === "draft" ? `Accepted. ${style(v.styleId).name} v${v.version} is now your active template.` : "Note accepted." };
+      S.flash = { kind: "info", text: v.state === "draft" && !S.simRun.parentRunId ? `Accepted. ${style(v.styleId).name} v${v.version} is now your active template.` : "Note accepted. The template was not changed." };
       render();
+    }
+    else if (act === "clarify-option") { S.fb = Object.assign({}, S.fb, { text: el.dataset.value, scope: "future" }); S.clarification = null; S.simMode = "improve"; render(); }
+    else if (act === "retry-note") {
+      const correction = $("#retry-text").value.trim();
+      const { jobId } = await api(`/api/runs/${S.simRun.id}/retry`, { correction });
+      S.simJob = { id: jobId, status: "queued", versionId: S.simRun.versionId };
+      const j = await poll(jobId, async (j) => { S.simJob = Object.assign(j, { versionId: S.simRun.versionId }); if (S.screen === "meeting") render(); });
+      if (j.status === "completed") { S.simRun = await api(`/api/runs/${j.result.runId}`); S.simJob = null; S.simMode = null; S.patchProposal = null; S.clarification = null; await refresh(); }
+      render();
+    }
+    else if (act === "confirm-patch") {
+      if (S.confirmingPatch) return;
+      S.confirmingPatch = true; render();
+      const r = await api(`/api/patch-proposals/${S.patchProposal.id}/confirm`, { baseVersionId: S.patchProposal.baseVersionId });
+      S.confirmingPatch = false; S.patchProposal = null; await refresh();
+      if (r.proposalId) { S.versionId = r.proposalId; S.styleId = version(r.proposalId).styleId; go("control"); }
+      if (r.jobId) { S.proposalJob = { id: r.jobId, status: "queued", result: null }; const j = await poll(r.jobId, async (j) => { S.proposalJob = j; if (S.screen === "control") render(); }); await refresh(); S.proposalJob = null; if (j.status === "completed") await loadCompare(r.proposalId); }
+      render();
+    }
+    else if (act === "decline-patch") {
+      if (S.confirmingPatch) return;
+      await api(`/api/patch-proposals/${S.patchProposal.id}/decide`, { decision: "declined" }); S.patchProposal = null; await refresh(); render();
     }
     else if (act === "send-feedback") {
       const f = readFeedbackForm();
-      const r = await api(`/api/runs/${S.simRun.id}/feedback`, { accepted: false, scope: f.scope, tags: f.tags, text: f.text,
+      let r = await api(`/api/runs/${S.simRun.id}/feedback`, { accepted: false, scope: f.scope, tags: f.tags, text: f.text,
         addSection: f.secName ? { name: f.secName, required: f.secReq } : null });
-      S.simMode = null; S.fb = { tags: [], text: "", scope: "future", secName: "", secReq: false };
+      S.simMode = null; S.fb = { tags: [], text: "", scope: f.scope === "future" ? "future" : "note_only", secName: "", secReq: false };
+      if (r.jobId) {
+        S.feedbackJob = { id: r.jobId, status: "queued", phase: "Starting feedback interpretation", elapsed: 0 };
+        render();
+        const j = await poll(r.jobId, async (j) => { S.feedbackJob = j; if (S.screen === "meeting") render(); });
+        S.feedbackJob = null;
+        if (j.status === "cancelled") { S.flash = { kind: "notice", text: "Feedback interpretation cancelled. No style change was saved; the simulation is recorded as development evidence." }; return render(); }
+        if (j.status === "failed") throw new Error(j.error || "Feedback interpretation failed.");
+        r = j.result;
+      }
+      if (r.interpretation && r.interpretation.kind === "clarification") { S.clarification = Object.assign({}, r.interpretation, { runId: S.simRun.id }); S.simMode = null; S.simRun = await api(`/api/runs/${S.simRun.id}`); await refresh(); return render(); }
+      if (r.interpretation && r.interpretation.kind === "no_change") { S.simMode = null; S.simRun = await api(`/api/runs/${S.simRun.id}`); await refresh(); S.flash = { kind: "notice", text: r.interpretation.explanation || "No change proposed." }; return render(); }
+      if (r.patchProposal) { S.patchProposal = r.patchProposal; S.simMode = null; S.clarification = null; await refresh(); return render(); }
       if (!r.proposalId) { S.simRun = await api(`/api/runs/${S.simRun.id}`); await refresh(); S.flash = { kind: "info", text: "Thanks — recorded for this note only. The template was not changed." }; return render(); }
       await refresh();
       S.styleId = version(r.proposalId).styleId; S.versionId = r.proposalId; S.compare = null;
@@ -563,7 +606,7 @@ document.addEventListener("click", async (e) => {
         if (j.status === "completed") { S.proposalJob = null; await loadCompare(r.proposalId); } else render();
       }
     }
-  } catch (err) { if ($("#fb-text")) readFeedbackForm(); fail(err); }
+  } catch (err) { S.confirmingPatch = false; if ($("#fb-text")) readFeedbackForm(); fail(err); }
 });
 
 (async function init() {
