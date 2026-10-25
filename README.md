@@ -6,7 +6,7 @@ Hackathon project for the Claude Impact Lab, Seattle, October 25, 2026.
 
 ## Status — read this first
 
-This repository is a **public project foundation and evidence pack**, not a completed coach application. It contains a de-identified current customer journey, product requirements, a lean canvas, a local evaluation plan, a sanitized reference prompt, and a demo/submission checklist. No working coach, validated local judge, benchmark results, or demo video is claimed.
+This repository is a **public project foundation and evidence pack**, not a completed coach application. It contains a de-identified current customer journey, product requirements, a lean canvas, a local evaluation plan, a sanitized reference prompt, and a demo/submission checklist. A narrow conversational prompt-writing CLI spike using local Ollama is available; it does not establish a complete coach application, validated local judge, benchmark result, or clinical quality. It defaults to loopback, while an explicit `--host` can send content to a user-selected private LAN inference host. No cloud fallback is used, but this does not prove content stays on the client VM. See the [spike instructions and measured results](spikes/001-local-prompt-chat/README.md).
 
 The existing Scribular product and private custom-prompt tool predate this hackathon. This repo does not include their code or represent them as new work.
 
@@ -49,7 +49,7 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
 
 ## Getting started today
 
-Read the customer journey, scope, and evaluation plan; then implement the smallest vertical slice described in the hackathon checklist. No installation is required to read this evidence pack. **There is no application launch command yet.** Do not present this repository as plug-and-play until setup and the core flow have been implemented and verified.
+Read the customer journey, scope, and evaluation plan. The CLI spike can be run with Python 3.9+ and an already-installed local Ollama model; setup and invocation are documented in [Spike 001](spikes/001-local-prompt-chat/README.md). **There is no full coach application launch command.** The spike is not production infrastructure and does not meet the product acceptance checklist.
 
 Planned runtime: a local interface plus Ollama, with no cloud fallback. Inspect AI is the recommended development evaluation harness; Phoenix is optional, not a required end-user dependency.
 

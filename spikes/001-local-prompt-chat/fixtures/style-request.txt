@@ -1,0 +1,10 @@
+FICTIONAL STYLE EXAMPLE AND REQUIREMENTS. No real patient content.
+I want a brief narrative note with the headings Client Discussed, Therapist Contribution, and optional Next Actions.
+Use the client's reported perspective rather than asserting clinical judgments.
+Include short exact client quotations when available. Describe only interventions supported by the transcript.
+Omit Next Actions entirely unless an action was explicitly stated. Do not include goals or invent plans.
+Use third person, no personal names. At first use up to three sentences per main section.
+Fictional example of shape, not facts to reuse:
+Client Discussed: The client described finding a pottery class enjoyable.
+Therapist Contribution: The therapist invited the client to describe the experience.
+Never carry pottery or any other example fact into another session.

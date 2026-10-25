@@ -1,0 +1,75 @@
+{
+  "verdict": "PARTIAL",
+  "scope": "Small synthetic local prompt-chat exercise; not clinical validation",
+  "runtime": {
+    "ollama_version": "0.20.5",
+    "model_tag": "gemma-4-E2B-it.gguf:latest",
+    "model_family": "gemma4",
+    "quantization": "Q4_K_M",
+    "reported_parameters": "4.6B",
+    "model_digest": "1bcd4e9d158c7cdf00143a107500990cb94f957a1ab0de57de9a2a3b9cf0c5d2",
+    "original_context_tokens": 4096,
+    "hardening_run_context_tokens": 8192,
+    "output_token_cap": 700,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": 64,
+    "seed": 42
+  },
+  "placement_and_downloads": {
+    "cli_client": "VM",
+    "inference_runtime": "separate host Ollama",
+    "hardware_specs_measured": false,
+    "new_model_needed_or_installed_on_inference_host": false,
+    "unused_standalone_runtime_downloaded_to_vm": true,
+    "partial_model_data_downloaded_to_vm": true,
+    "standalone_runtime_used_for_inference": false
+  },
+  "original_run_before_hardening_call_seconds": {
+    "initial_prompt_draft": 8.201,
+    "development_a_note_v1": 3.236,
+    "first_prompt_revision": 12.158,
+    "development_a_note_v2": 2.102,
+    "second_prompt_revision": 12.896,
+    "development_a_note_v3": 2.557,
+    "simulation_b_before_later_chat": 1.908,
+    "vague_feedback_chat_after_b": 13.495
+  },
+  "manual_clean_b_continuation_seconds": 2.473,
+  "hardening_cli_run_before_review_additions_call_seconds": {
+    "initial_prompt_draft": 11.281,
+    "development_a_note_v1": 3.186,
+    "first_prompt_revision": 10.558,
+    "development_a_note_v2": 2.073,
+    "second_prompt_revision": 12.587,
+    "development_a_note_v3": 2.526,
+    "simulation_b_before_later_chat": 1.878,
+    "vague_feedback_chat_after_b": 8.624
+  },
+  "synthetic_observations": {
+    "initial_prompt_followed_one_sentence_request": false,
+    "first_revision_followed_one_sentence_request": true,
+    "quoted_client_phrases_in_a_notes_v1_v2_v3": [0, 0, 0],
+    "phone_free_dinner_action_present_in_a_notes_v1_v2_v3": [false, false, true],
+    "action_rule_lost_from_prompt": false,
+    "pottery_example_present_in_prompt_versions_1_2_3": [true, true, false],
+    "vague_feedback_returned_identical_prompt_v3": true,
+    "vague_feedback_claimed_best_practice_change_without_clarifying": true,
+    "b_note_generated_before_following_coach_chat": true,
+    "b_following_coach_chat_exposes_b_as_development_evidence": true,
+    "clean_b_followup_exact_quote_and_optional_section_omission_observed": true,
+    "clean_b_followup_was_manual_continuation_with_label_stripped": true,
+    "clean_b_followup_is_independent_generalization_evidence": false,
+    "all_scripted_applies_are_synthetic": true,
+    "clinician_review_or_acceptance": false
+  },
+  "limitations": [
+    "A few short synthetic examples and one fixed seed do not support rates or broad reliability claims.",
+    "The original full run predates style/context/history and safety hardening.",
+    "The hardening run predates this review's no-op gate, B-exposure state, and expanded checks; it is a technical verification, not an independent quality sample.",
+    "Client VM and inference host hardware specifications were not measured.",
+    "No clinician reviewed or accepted notes.",
+    "Fixture-specific checks do not establish clinical fidelity and do not apply as universal expectations to custom styles.",
+    "Character-based context estimate is not model-tokenizer accounting."
+  ]
+}
