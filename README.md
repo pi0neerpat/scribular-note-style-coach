@@ -49,6 +49,23 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
 
 ## Run the demo
 
+### Quick start for teammates (macOS/Linux)
+
+1. Install or update **Ollama** from https://ollama.com/download and open it. Gemma 4 needs a recent version; 0.5.x is too old.
+2. Run:
+   ```bash
+   git clone https://github.com/pi0neerpat/scribular-note-style-coach.git
+   cd scribular-note-style-coach
+   git checkout local-demo-app        # until the PR is merged
+   ./start-demo.sh
+   ```
+   The script checks Python 3.9+ and Ollama, downloads `gemma4:e4b` the first time (~6.6 GB), starts the server, and opens http://127.0.0.1:8765. If something is missing, it prints what to install.
+3. Click **Create my note style → Use a fictional example → Read my style → Create my template** and continue through the four steps.
+
+Tested on macOS (Apple M5, 16 GB). Plan for about 8 GB of free memory for the model. Windows has not been tested; run `python app\server.py` with Ollama running if you want to try.
+
+### Manual start
+
 Requirements: macOS/Linux with Python 3.9+ (standard library only, nothing to `pip install`) and a current [Ollama](https://ollama.com/download) with the pinned model:
 
 ```bash
