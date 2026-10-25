@@ -107,6 +107,8 @@ All of the following was written for this demo. None of it describes a real pers
   - general/CBT-informed
   - couples therapy
 
+- **Session library**: the team's 10 AI-generated fictional transcripts in `examples/sample-transcripts/`, covering brainspotting, couples sex therapy, EFT, executive coaching, Gottman, IFS, narrative, pain-rehab PT, team facilitation, and a telehealth couple. Choose one from the session picker next to *Try in a simulated session*. Library runs are labeled `library` and are not held-out checks. The library transcripts aren't annotated for agreed next steps, so the omission check asks the clinician to confirm instead of guessing. Known personal names are listed in `fixtures/fixtures.json` for the name check. All 10 ran with real Gemma 4 notes in 4–9 s each.
+
   B transcripts never include an agreed next step, so they test the omission rule. Gemma 4 sometimes writes a placeholder ("Homework: Omitted", "Plan: No plan was explicitly stated") and the check flags it. This is a useful moment to demonstrate *Improve my template*.
 
 ### Repository layout
@@ -124,10 +126,10 @@ Inspect AI and Phoenix are not used in this demo. They remain optional developme
 
 ## Verification
 
-Run on October 25, 2026. Machine: Apple M5, 16 GB RAM, macOS 26.6. Runtime: Ollama 0.40.11 with `gemma4:e4b` (digest `eb2177adf764…`). Settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 4096, num_predict 700, thinking off.
+Run on October 25, 2026. Machine: Apple M5, 16 GB RAM, macOS 26.6. Runtime: Ollama 0.40.11 with `gemma4:e4b` (digest `eb2177adf764…`). Settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 8192, num_predict 700, thinking off.
 
 ```bash
-python3 -m unittest discover -s tests          # 20 tests, OK (no model needed)
+python3 -m unittest discover -s tests          # 24 tests, OK (no model needed)
 COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py &   # fresh data dir
 python3 scripts/e2e_demo_check.py              # ALL E2E CHECKS PASSED (real inference)
 ```
@@ -155,7 +157,8 @@ On fictional transcript B, Gemma 4 wrote `Next Actions: None` instead of omittin
 
 ## Limitations
 
-- Checks are deterministic formatting/consistency checks: section structure, the omission rule, length, exact quotes, names, pronouns, and preamble. They **cannot** verify clinical accuracy or attribution; that needs clinician review. There is no local LLM judge.
+- Checks are deterministic formatting/consistency checks: section structure, the omission rule, length, exact quotes, **who said each quote**, names, pronouns, and preamble. They **cannot** verify clinical accuracy, or attribution of paraphrased (unquoted) statements; that needs clinician review. There is no local LLM judge.
+- Observed on the session library: Gemma 4 credited a client's words to the therapist in 2 of 10 notes (telehealth couple, pain-rehab PT). The quote-attribution check catches these. It was added after a manual review found the first case.
 - Results come from a small set of fictional transcripts on one machine and one model. They are not validated with clinicians, and they say nothing about time saved.
 - Preference extraction is heuristic: it detects headings, sentence counts, quotes, voice, and pronouns. Uncertain readings are shown to the clinician for confirmation.
 - "Preparing" changes prompt text and preferences only. No model weights are trained.
