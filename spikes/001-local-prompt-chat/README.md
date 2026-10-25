@@ -50,7 +50,7 @@ python3 spikes/001-local-prompt-chat/coach.py \
 
 The file is read as UTF-8 and sent only to the configured Ollama endpoint. Its path is not recorded in run metadata. The contents may appear in local run artifacts, so keep `.runs/` private. The default remains the newly created fictional fixture.
 
-Other natural-language messages can ask questions or clarify preferences. A change is always a proposal until `/apply`; an identical prompt is reported as no change and cannot create a version. `/accept` concerns only the latest completed note, not a certification of future clinical correctness. A new generation invalidates the previous acceptance target, including when the new generation fails.
+Other natural-language messages can ask questions or clarify preferences. A change is always a proposal until `/apply`; an identical prompt is reported as no change and cannot create a version. `/accept` concerns only the latest completed note, not a certification of future clinical correctness. A new generation invalidates the previous acceptance target, including when the new generation fails. The successful acceptance path is control-tested with a synthetic reviewer label; no clinician acceptance has been exercised.
 
 After `/test`, coach chats continue to use A as their source and latest A preview. B is never injected automatically. Enter `/discuss-test` to arm the next chat; only when that request is sent does the CLI persist B as exposed development evidence and warn that B is no longer held out. Use a new untouched C for another generalization check. The synthetic script makes its concrete revisions before `/test`, then explicitly opts in with `discuss_test` before the vague-feedback turn.
 
@@ -61,12 +61,13 @@ The model may ignore instructions, omit content, or rewrite too much. Review the
 ```sh
 python3 spikes/001-local-prompt-chat/coach.py \
   --model YOUR_INSTALLED_LOCAL_MODEL_TAG \
+  --context 8192 \
   --script spikes/001-local-prompt-chat/fixtures/smoke-feedback.json
 ```
 
 This script simulates a reviewer: initial draft -> development A -> one-sentence request -> A -> explicit content correction -> A -> B -> explicit `discuss_test` opt-in -> vague-feedback stress case. Its `/apply` decisions are labeled `scripted_test`, not clinician acceptance. The last chat intentionally exposes B as development evidence.
 
-Use `--host` for a different private local endpoint; proxies are disabled in the HTTP client. `--context`, `--output-tokens`, `--temperature`, and `--timeout` are explicit run settings. The CLI estimates input size conservatively and fails before sending when its estimate exceeds the input budget; it does not drop old chat turns. Since Ollama tokenizer counts are not available to this stdlib-only client, the estimate can reject requests early or miss a server-side context limit. Start a new CLI session with a shorter style/history or larger context if it refuses a request. No hidden retries or provider substitutions occur.
+Use `--host` for a different private LAN endpoint; proxies are disabled in the HTTP client. Prompt, style, transcript, and note content are sent to that user-selected host and may leave the client VM. This is no-cloud routing, not proof that content stays on the VM. `--context`, `--output-tokens`, `--temperature`, and `--timeout` are explicit run settings. The CLI estimates input size conservatively and fails before sending when its estimate exceeds the input budget; it does not drop old chat turns. Since Ollama tokenizer counts are not available to this stdlib-only client, the estimate can reject requests early or miss a server-side context limit. Start a new CLI session with a shorter style/history or larger context if it refuses a request. No hidden retries or provider substitutions occur.
 
 ## Artifacts
 
@@ -82,7 +83,7 @@ Limited checks report quote count, exact-source quote presence expected by the b
 python3 -m unittest discover -s spikes/001-local-prompt-chat -p test_coach.py -v
 ```
 
-These test endpoint restrictions, proposal/apply/restore separation, no-op proposal gating, default A context after B, explicit B opt-in/exposure, synthetic acceptance labeling, cancellation, incomplete output-cap rejection, SHA-256 provenance, fenced JSON parsing, style-file reading, preflight size rejection, failed/cancelled-run acceptance safety, and selected bundled-fixture checks. They do not exercise clinician acceptance or measure model quality.
+These test endpoint restrictions, proposal/apply/restore separation, no-op proposal gating, default A context after B, explicit B opt-in/exposure, the successful acceptance path with a synthetic reviewer label, cancellation and stale-pending cleanup, incomplete output-cap rejection, SHA-256 provenance, fenced JSON parsing, style-file reading, preflight size rejection, failed/cancelled-run acceptance safety, and selected bundled-fixture checks. They do not exercise clinician acceptance or measure model quality.
 
 ## Limits
 

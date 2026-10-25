@@ -19,3 +19,5 @@ The deny patterns in .gitignore reduce accidents; they are not a substitute for 
 ## Proposed runtime
 
 Local inference alone does not establish legal/regulatory compliance. Verify actual storage, logs, access, telemetry, exports, and network behavior. No automatic sharing of patient content or silent learning from edits. Clinical examples for the public demo must be fictional.
+
+Spike 001 defaults to a loopback Ollama endpoint. Its explicit `--host` option can target a user-selected private LAN inference host; request content then leaves the client process/VM for that host. The no-cloud restriction does not mean content never leaves the VM. Keep machine-specific endpoints and raw run artifacts out of shared files.

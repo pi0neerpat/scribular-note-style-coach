@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Throwaway local-only prompt-writing/chat spike. Python 3.9+, stdlib only."""
+"""Throwaway no-cloud prompt-writing/chat spike. Python 3.9+, stdlib only."""
 import argparse
 import difflib
 import hashlib
@@ -184,7 +184,9 @@ class Spike:
         source_path = HERE / "fixtures" / (source_fixture + ".txt")
         context = {"desired_style":self.spec,"active_style_prompt":self.active,
                    "source_fixture":source_fixture,"source_transcript":source_path.read_text(encoding="utf-8"),
-                   "source_fixture_status":"explicitly opted-in development evidence; B is no longer held out" if use_b else "development evidence; held-out B excluded",
+                   "source_fixture_status":("explicitly opted-in development evidence; B is no longer held out" if use_b else
+                                            "development evidence; B was previously exposed to this coach" if self.simulation_b_exposed else
+                                            "development evidence; held-out B excluded"),
                    "latest_note":self.simulation_b_preview if use_b else self.development_preview,
                    "user_feedback":feedback}
         if use_b:
@@ -233,7 +235,9 @@ class Spike:
         if fixture not in ("development-a", "simulation-b"):
             raise ValueError("Unknown synthetic fixture.")
         source_path = HERE / "fixtures" / (fixture + ".txt")
-        source = source_path.read_text(encoding="utf-8")
+        source_bytes = source_path.read_bytes()
+        source = source_bytes.decode("utf-8")
+        source_fixture_sha256 = hashlib.sha256(source_bytes).hexdigest()
         # Invalidate the prior acceptance target before a new run can fail or
         # be cancelled. Only its completed output can become accept-able.
         self.preview = None
@@ -245,7 +249,7 @@ class Spike:
              "\nSOURCE TRANSCRIPT:\n<transcript>\n" + source + "\n</transcript>"}])
         checks = self.check(text, source, fixture, self.active, self.bundled_style)
         record = {"run_id":uuid.uuid4().hex,"fixture":fixture,
-                  "source_fixture_sha256":sha256_file(source_path),"code_sha256":self.code_sha256,
+                  "source_fixture_sha256":source_fixture_sha256,"code_sha256":self.code_sha256,
                   "style_version":len(self.versions),
                   "prompt_snapshot":self.active,"note":text,"checks":checks,
                   "acceptance":None}
@@ -374,7 +378,8 @@ class Spike:
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--host",default="http://127.0.0.1:11434")
+    p.add_argument("--host",default="http://127.0.0.1:11434",
+                   help="Loopback by default; private LAN HTTP only for a user-selected inference host.")
     p.add_argument("--model",default="gemma4:e2b-it-q4_K_M")
     p.add_argument("--output",default=str(HERE/".runs"))
     p.add_argument("--script",help="Synthetic scripted reviewer, not clinician acceptance.")

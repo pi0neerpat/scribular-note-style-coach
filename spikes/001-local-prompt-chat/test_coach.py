@@ -130,7 +130,8 @@ class Controls(unittest.TestCase):
             s.active="same prompt";s.pending="older proposal";s.pending_checks={"old":True}
             s.preview=None;s.versions=[{"version":1,"prompt":"same prompt"}]
             s.metrics=[];s.history=[];s.last_fixture="development-a";s.spec="brief"
-            s.bundled_style=True;s.simulation_b_exposed=False;s.metadata={}
+            s.bundled_style=True;s.simulation_b_exposed=False;s.discuss_test_armed=False
+            s.development_preview=None;s.simulation_b_preview=None;s.metadata={}
             s.call=lambda *args:json.dumps({"message":"This is better","prompt":"same prompt"})
             output=io.StringIO()
             with contextlib.redirect_stdout(output):
@@ -182,7 +183,8 @@ class Controls(unittest.TestCase):
             s.preview="B note";s.development_preview="A note";s.simulation_b_preview="B note"
             s.versions=[{"version":1,"prompt":"active"}];s.metrics=[];s.history=[]
             s.last_fixture="simulation-b";s.spec="brief";s.bundled_style=True
-            s.simulation_b_exposed=False;s.discuss_test_armed=False;s.metadata={}
+            s.simulation_b_exposed=False;s.discuss_test_armed=False
+            s.metadata={}
             s.code_sha256=coach.sha256_file(Path(coach.__file__))
             captured={}
             def request(path,payload,before_send=None):
@@ -276,6 +278,25 @@ class Controls(unittest.TestCase):
             self.assertEqual(record["code_sha256"],s.code_sha256)
             self.assertEqual(record["source_fixture_sha256"],expected)
 
+    def test_new_run_metadata_contains_code_fixture_and_style_hashes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            args=argparse.Namespace(host="http://127.0.0.1:11434",model="installed-local",
+                                    output=folder,script=None,style=None,context=4096,
+                                    output_tokens=700,temperature=1.0,timeout=1)
+            def local_response(self,path,data=None):
+                if path=="/api/tags":
+                    return {"models":[{"name":"installed-local","digest":"digest"}]}
+                return {"version":"test"}
+            with patch.object(coach.Spike,"request",local_response):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    s=coach.Spike(args)
+            metadata=json.loads((s.root/"state.json").read_text())["metadata"]
+            self.assertEqual(metadata["code_sha256"],coach.sha256_file(Path(coach.__file__)))
+            self.assertEqual(metadata["fixture_sha256"]["development-a"],
+                             coach.sha256_file(coach.HERE/"fixtures/development-a.txt"))
+            self.assertEqual(metadata["style_input_sha256"],
+                             coach.sha256_file(coach.HERE/"fixtures/style-request.txt"))
+
     def test_bundled_a_checks_expose_missing_quote_action_and_prompt_canary(self):
         source=(coach.HERE/"fixtures/development-a.txt").read_text()
         note="Client Discussed: Work was difficult.\nTherapist Contribution: The therapist asked a question."
@@ -299,7 +320,8 @@ class Controls(unittest.TestCase):
             s.active="current";s.pending=None;s.pending_checks=None;s.preview=None
             s.versions=[{"version":1,"prompt":"current"}];s.metrics=[];s.history=[]
             s.last_fixture="development-a";s.spec="brief";s.bundled_style=True
-            s.simulation_b_exposed=False;s.metadata={}
+            s.simulation_b_exposed=False;s.discuss_test_armed=False
+            s.development_preview=None;s.simulation_b_preview=None;s.metadata={}
             s.call=lambda *args:json.dumps({"message":"Proposal","prompt":"Keep pottery in the example."})
             with contextlib.redirect_stdout(io.StringIO()):
                 s.propose("Remove examples")
