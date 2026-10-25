@@ -64,6 +64,20 @@ class Checks(unittest.TestCase):
         note = GOOD.replace("most mornings.", 'most mornings, and "the Siren" is loud.')
         self.assertEqual(status(coach.check_note(note, dict(PREFS, quotes={"max": 1}), META_NO_ACTIONS, TRANSCRIPT), "quotes_exact"), ["pass"])
 
+    def test_client_quote_credited_to_therapist_fails(self):
+        transcript = "Therapist: What helped?\nClient: I can hear that it felt that way."
+        note = GOOD.replace('The therapist used externalization by inviting the client to name the worry.',
+                            'The therapist used validation, saying "I can hear that it felt that way."')
+        checks = coach.check_note(note, PREFS, META_NO_ACTIONS, transcript + "\n" + TRANSCRIPT)
+        self.assertEqual(status(checks, "quote_attribution"), ["fail"])
+        self.assertEqual(status(coach.check_note(GOOD, PREFS, META_NO_ACTIONS, TRANSCRIPT), "quote_attribution"), ["pass"])
+
+    def test_attribution_is_judged_per_sentence_across_sections(self):
+        transcript = 'Client: I just want to know they still care.\nTherapist: It is a dance neither of you chose.'
+        note = ('Client Discussed:\nThe client stated, "I just want to know they still care."\n\n'
+                'Therapist Contribution:\nThe therapist described "a dance neither of you chose."')
+        self.assertEqual(status(coach.check_note(note, PREFS, META_NO_ACTIONS, transcript), "quote_attribution"), ["pass"])
+
     def test_names_and_gendered_pronouns_fail(self):
         note = GOOD.replace("The therapist asked", "Priya asked her")
         checks = coach.check_note(note, PREFS, META_NO_ACTIONS, TRANSCRIPT)
@@ -109,10 +123,29 @@ class Samples(unittest.TestCase):
     def test_every_fixture_is_labeled_fictional(self):
         m = coach.load_fixture_manifest()
         for fid, meta in m["fixtures"].items():
+            if meta.get("library"):
+                continue  # provenance documented in examples/sample-transcripts/README.md
             first = (coach.FIXTURE_DIR / meta["file"]).read_text().splitlines()[0]
             self.assertTrue(first.startswith("FICTIONAL TRANSCRIPT"), fid)
         for nt in m["noteTypes"]:
             self.assertEqual(len(set(nt["fixtures"].values())), 3, "A, B and C must be different transcripts")
+
+
+class Library(unittest.TestCase):
+    def test_library_sessions_load_and_fit_context(self):
+        import ollama
+        m = coach.load_fixture_manifest()
+        readme = (coach.ROOT / "examples" / "sample-transcripts" / "README.md").read_text()
+        self.assertIn("fictional", readme.lower())
+        prompt = coach.compile_prompt(PREFS)
+        for fid in m["library"]["sessions"]:
+            ollama.check_context_budget(prompt, coach.user_message(coach.load_transcript(fid)))
+
+    def test_unannotated_session_asks_clinician_instead_of_guessing(self):
+        meta = {"names": [], "explicitNextActions": None}
+        with_actions = GOOD + "\n\nNext Actions:\nThe client will rest this evening."
+        self.assertEqual(status(coach.check_note(with_actions, PREFS, meta, TRANSCRIPT), "optional_omission"), ["warn"])
+        self.assertEqual(status(coach.check_note(GOOD + "\n\nNext Actions: None", PREFS, meta, TRANSCRIPT), "optional_omission"), ["fail"])
 
 
 class Compilation(unittest.TestCase):

@@ -26,6 +26,7 @@ CORRECTION_BLOCKS = {
     "no_repeats": "Output exactly one note. If you notice you are writing a heading a second time, stop.",
     "optional_omission": "Optional sections must be omitted entirely (no heading, no placeholder such as 'None') unless the transcript contains an explicit statement that belongs there.",
     "length": "Count the sentences in each section and stay within the stated range. Stop a section once it reaches the maximum.",
+    "quote_attribution": "Before quoting, check the speaker label on that transcript line. Only credit the therapist with words on therapist lines, and the client with words on client lines.",
     "quotes_exact": "Copy client quotes character-for-character from the transcript. If you cannot copy a phrase exactly, paraphrase it without quotation marks.",
     "no_names": "Do not write any personal names. Replace each with a relationship descriptor such as 'their manager', 'their brother', or 'a neighbor'.",
     "pronouns": "Refer to the client only as 'the client' or with they/them. Never use he, she, him, her, his, or hers.",
@@ -41,6 +42,7 @@ CHECK_LABELS = {
     "optional_omission": "Optional sections follow the omission rule",
     "length": "Section length within range",
     "quotes_exact": "Quotes copied exactly from transcript",
+    "quote_attribution": "Quotes credited to the right speaker",
     "no_names": "Personal names replaced",
     "pronouns": "Gender-neutral pronouns",
     "no_preamble": "No preamble or commentary",
@@ -538,6 +540,13 @@ def check_note(output, prefs, fixture_meta, transcript):
                     if present else "omitted."), warn=True)
             continue
         stated = fixture_meta.get("explicitNextActions", False)
+        if stated is None:  # library transcript: not annotated, so ask instead of guessing
+            if s["name"] in placeholders:
+                add("optional_omission", False, "'%s' has a placeholder instead of content or omission." % s["name"])
+            else:
+                add("optional_omission", False, "'%s' %s. This session isn't annotated, so confirm against the transcript." % (
+                    s["name"], "included" if present else "omitted"), warn=True)
+            continue
         if s["name"] in placeholders:
             add("optional_omission", False, "'%s' has a placeholder instead of content; it should be %s." % (
                 s["name"], "filled from what was stated" if stated else "omitted entirely"))
@@ -572,6 +581,31 @@ def check_note(output, prefs, fixture_meta, transcript):
     if prefs.get("quotes", {}).get("requireWhenAvailable") and quoted_client_source and not quotes:
         detail.append("A quoted client phrase is available in the source, but no exact quote was included.")
     add("quotes_exact", not detail, " ".join(detail))
+
+    # Attribution of quoted words: who said them in the transcript vs. who the note credits.
+    clinician_labels = ("therapist", "you", "coach", "facilitator", "counselor", "clinician")
+    speakers = {}
+    for line in transcript.splitlines():
+        if ":" not in line:
+            continue
+        label, said = line.split(":", 1)
+        side = "clinician" if label.strip().lower() in clinician_labels else "client"
+        for q in quotes:
+            if q and q in _norm(said):
+                speakers.setdefault(q, set()).add(side)
+    misattributed = []
+    note_sentences = [x for _, body in sections for x in re.split(r"(?:(?<=[.!?])|(?<=[.!?][\"\u201d]))\s+(?=[A-Z])", body)]
+    for sent in note_sentences:
+        sent_quotes = [_norm(q) for q in QUOTE_RE.findall(sent) if len(q.split()) >= 2]
+        credits = re.match(r"\W*(the )?(therapist|coach|facilitator|counselor|clinician)\b", sent, re.I)
+        credits_client = re.match(r"\W*(the )?(client|clients|partner|couple|leader)\b", sent, re.I)
+        for q in sent_quotes:
+            who = speakers.get(q, set())
+            if credits and who == {"client"}:
+                misattributed.append('"%s" is credited to the %s but was said by the client' % (q, credits.group(2).lower()))
+            elif credits_client and who == {"clinician"}:
+                misattributed.append('"%s" is credited to the client but was said by the clinician' % q)
+    add("quote_attribution", not misattributed, "; ".join(misattributed[:2]))
 
     if prefs.get("replaceNames", True):
         leaked = [n for n in fixture_meta.get("names", []) if re.search(r"\b%s\b" % re.escape(n), output)]

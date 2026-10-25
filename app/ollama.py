@@ -10,7 +10,7 @@ import urllib.request
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 MODEL = os.environ.get("COACH_MODEL", "gemma4:e4b")
-OPTIONS = {"temperature": 0.2, "top_p": 0.9, "seed": 42, "num_ctx": 4096, "num_predict": 700}
+OPTIONS = {"temperature": 0.2, "top_p": 0.9, "seed": 42, "num_ctx": 8192, "num_predict": 700}
 PRIVATE_V4 = tuple(ipaddress.ip_network(x) for x in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
 PRIVATE_V6 = ipaddress.ip_network("fc00::/7")
 

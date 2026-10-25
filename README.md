@@ -110,6 +110,8 @@ All of the following was written for this demo. None of it describes a real pers
   - general/CBT-informed
   - couples therapy
 
+- **Session library**: the team's 10 AI-generated fictional transcripts in `examples/sample-transcripts/`, covering brainspotting, couples sex therapy, EFT, executive coaching, Gottman, IFS, narrative, pain-rehab PT, team facilitation, and a telehealth couple. Choose one from the session picker next to *Try in a simulated session*. Library runs are labeled `library` and are not held-out checks. The library transcripts aren't annotated for agreed next steps, so the omission check asks the clinician to confirm instead of guessing. Known personal names are listed in `fixtures/fixtures.json` for the name check. All 10 ran with real Gemma 4 notes in 4–9 s each.
+
   B transcripts never include an agreed next step, so they test the omission rule. Gemma 4 sometimes writes a placeholder ("Homework: Omitted", "Plan: No plan was explicitly stated") and the check flags it. This is a useful moment to demonstrate *Improve my template*.
 
 ### Repository layout
@@ -129,14 +131,30 @@ The feedback/retry API contract is documented in [docs/coach-backend.md](docs/co
 
 ## Verification
 
-### Verification commands
+Current local settings: temperature 0.2, top_p 0.9, seed 42, num_ctx 8192, num_predict 700, thinking off. The [latest verification](#latest-verification-merged-source-num_ctx-8192) below covers this merged source at num_ctx 8192. The earlier E4B and E2B runs used num_ctx 4096 on earlier source revisions; they are kept separate and do not verify the current setting.
 
 ```bash
-python3 -m unittest discover -s tests          # 41 tests passed on the merged source (fake inference for control paths)
+python3 -m unittest discover -s tests          # 45 tests passed on this merged source (fake inference for control paths)
 node --check app/static/app.js
 python3 -m py_compile app/*.py scripts/smoke_conversational.py
 git diff --check
 ```
+
+### Latest verification (merged source, num_ctx 8192)
+
+On the merged source (teammate session library, quote-attribution check, and num_ctx 8192 combined with confirmed patches and note-only retries), the parent ran the 45 unit tests, `node --check`, and `git diff --check` successfully. It then ran both real-inference scripts with imported `gemma-4-E2B-it.gguf:latest` (digest prefix `1bcd4e9d158c`) on Ollama 0.20.5, num_ctx 8192, all other options unchanged. The client VM reported Apple M2 (Virtual), 8 GB RAM, macOS 26.2. **Inference-host hardware was not measured.**
+
+- Full real HTTP E2E: passed (exit 0). Same sequence as listed below.
+- Conversational smoke: passed (exit 0). It verified vague clarification, the pending-then-confirmed proposal, and a retry that reuses the source.
+
+Observed in this run (single examples, not benchmarks):
+
+- Preparation on A took 3.5 s with one attempt. The draft passed 9 of 9 practice checks.
+- Simulation on B took 3.7 s. It passed 7 of 9 checks; `optional_omission` and `no_names` failed. `quote_attribution` passed.
+- Confirmed preview on fresh C took 9.8 s.
+- Run counts: development 2, simulation 3, real 0.
+
+These format checks do not establish clinical accuracy. There has been no clinician validation or acceptance and no measured time savings. The session library was not exercised by either script.
 
 ### Existing E4B run
 
@@ -144,9 +162,9 @@ The earlier teammate verification used a client machine with Apple M5, 16 GB RAM
 
 Earlier E4B single-run timings were preparation 5–7 s (two attempts), simulation about 2.5 s, and preview about 4.5 s; these were not benchmarks. Its B output wrote `Next Actions: None`, which the omission check flagged. An earlier `gemma2:2b` trial had additional formatting and attribution failures; that is a separate model result.
 
-### Imported E2B run
+### Earlier imported E2B run (num_ctx 4096, pre-merge)
 
-Before this merge, the parent ran both scripts with imported `gemma-4-E2B-it.gguf:latest`, digest `1bcd4e9d158c7cdf00143a107500990cb94f957a1ab0de57de9a2a3b9cf0c5d2`, on Ollama 0.20.5. The client VM reported Apple M2 (Virtual), 8 GB RAM, macOS 26.2. **Inference-host hardware was not measured.** Both the full real E2E and the real conversational smoke passed on that source revision. The smoke verified vague feedback clarification without a version, a validated pending future-style patch followed by confirmation to a proposed but inactive version, and a retry linked to the same source/version while preserving the original. The merged source has not yet had a real-inference smoke rerun.
+Before this merge, the parent ran both scripts with imported `gemma-4-E2B-it.gguf:latest`, digest `1bcd4e9d158c7cdf00143a107500990cb94f957a1ab0de57de9a2a3b9cf0c5d2`, on Ollama 0.20.5 with num_ctx 4096. The client VM reported Apple M2 (Virtual), 8 GB RAM, macOS 26.2. **Inference-host hardware was not measured.** Both the full real E2E and the real conversational smoke passed on that source revision. The smoke verified vague feedback clarification without a version, a validated pending future-style patch followed by confirmation to a proposed but inactive version, and a retry linked to the same source/version while preserving the original. The merged-source rerun at num_ctx 8192 is recorded above under Latest verification.
 
 The full E2E drove the HTTP API through this sequence:
 
@@ -161,7 +179,7 @@ The full E2E drove the HTTP API through this sequence:
 - try to remove the grounding rules in a prompt edit (rejected)
 - confirm run counts: real = 0
 
-Observed during the E2B run (single runs, not benchmarks):
+Observed during this earlier E2B run (single runs, not benchmarks):
 
 - Preparation took 3.9 s with one attempt.
 - Simulation on B took 4.4 s.
@@ -173,7 +191,8 @@ The ten files in [examples/sample-transcripts](examples/sample-transcripts/READM
 
 ## Limitations
 
-- Checks are deterministic formatting/consistency checks: section structure, the omission rule, length, exact quotes, names, pronouns, and preamble. They **cannot** verify clinical accuracy or attribution; that needs clinician review. There is no local LLM judge.
+- Checks are deterministic formatting/consistency checks: section structure, the omission rule, length, exact quotes, **who said each quote**, names, pronouns, and preamble. They **cannot** verify clinical accuracy, or attribution of paraphrased (unquoted) statements; that needs clinician review. There is no local LLM judge.
+- Observed on the session library: Gemma 4 credited a client's words to the therapist in 2 of 10 notes (telehealth couple, pain-rehab PT). The quote-attribution check catches these. It was added after a manual review found the first case.
 - Results come from a small set of fictional transcripts on one machine and one model. They are not validated with clinicians, and they say nothing about time saved.
 - Preference extraction is heuristic: it detects headings, sentence counts, quotes, voice, and pronouns. Uncertain readings are shown to the clinician for confirmation.
 - "Preparing" changes prompt text and preferences only. No model weights are trained.
