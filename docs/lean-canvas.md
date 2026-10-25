@@ -16,7 +16,7 @@ Therapists using local note generation; initial adopters are existing Scribular 
 
 ## 4. Solution
 
-Example or starter -> confirmed preferences -> local preview -> targeted revision -> save. My Note Style exposes active version/preferences, later updates, history, and rollback. Learning concerns explicit preferences and prompts, not automatic weight training.
+Upload documents -> internal refinement on one selected fictional transcript -> Template Control (generated draft or defaults) -> Main Meeting simulation with a different fictional transcript and real Ollama. My Note Style exposes active version/preferences, later updates, history, and rollback. Learning concerns explicit preferences and prompts, not automatic weight training.
 
 ## 5. Channels
 
@@ -41,3 +41,7 @@ Founder experience translating preferences, existing customer relationships, and
 ## Riskiest assumptions
 
 A clinician can independently create an acceptable style; a local refinement loop earns its latency; continued updates reduce recurring corrections without regressions.
+
+## Latest scope/data refinement
+
+No customer-style marketplace. Continuous improvement remains in scope. Capture intake friction, refinement cost, generated-vs-default selection, fresh-case acceptance, targeted feedback, approvals and restores. Detailed content stays local; optional product analytics use a content-free allowlist.

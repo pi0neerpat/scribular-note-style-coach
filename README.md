@@ -18,23 +18,21 @@ A therapist can describe exactly how their notes should read, but translating th
 
 Improve **only the note-style workflow**: create, preview, refine, save, inspect, update, and roll back a reusable style. Do not build another scribe, recorder, transcription engine, EHR integration, or clinical decision tool.
 
-## Proposed experience
+## Proposed experience — latest brainstorm
 
-1. Choose a starter or provide an example note locally.
-2. Confirm inferred preferences: sections, length, perspective, quotes, and omission rules.
-3. Compile a prompt from tested instruction blocks.
-4. Preview a note from a bundled fictional transcript using local Ollama.
-5. Give targeted feedback and review the proposed change.
-6. Check additional examples; approve and save a version.
-7. See the active style and version on **My Note Style**.
-8. Later, flag recurring issues or explicitly use an edit as feedback. Preview a proposed update, approve or reject it, and retain rollback.
+1. Upload/paste a preferred document; confirm note-type selection and preferences (or choose a default).
+2. Internally refine a prompt on one selected fictional development transcript A. This is not weight training.
+3. Open **Template Control** to inspect the draft, edit, choose defaults, and manage active versions.
+4. Open **Main Meeting: Simulation** with a different fictional transcript B and a real Ollama summary.
+5. Continue learning through explicit feedback, tested proposed updates, approval, version history, and rollback.
 
-Continuous improvement means explicit preference learning and tested prompt revisions, **not silent weight training or automatic clinical changes**.
+No customer-style shopping/marketplace. Distinguish fictional development/simulation from real sessions. Once feedback from B informs revision, use a fresh C for the next generalization check.
 
 ## Read the project
 
 - [Discovery synthesis and decisions](docs/discovery-notes.md).
 - [Customer journey today](docs/customer-journey-today.md) — de-identified evidence and its limits.
+- [UI screens](docs/ui-screens.md), [data capture](docs/data-capture.md), and [current app findings](docs/current-app-findings.md).
 - [Proposed user workflow](docs/user-workflow.md) — onboarding and continued updates.
 - [Scope and acceptance criteria](docs/product-scope.md).
 - [Lean Canvas](docs/lean-canvas.md).

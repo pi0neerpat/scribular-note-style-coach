@@ -19,7 +19,7 @@ No new dependency installation or empirical local performance validation was per
 
 ## Proposed separation
 
-**Clinician-facing runtime:** local intake -> confirmed preferences -> deterministic prompt compiler -> local note generation -> review -> approved version.
+**Clinician-facing flow:** document intake -> confirmed selection/preferences -> prompt compilation and bounded development loop on A -> Template Control -> Main Meeting simulation on B -> approved version.
 
 **Development evaluation:** synthetic cases + clinician labels -> experiment runner -> code checks and validated narrow judges -> regression comparison.
 
@@ -42,3 +42,9 @@ Pin model tag/digest, quantization, context setting, generation parameters, hard
 Suggested fields: id, name, version, preferences, compiled prompt, creation/update timestamps, parent version, change explanation, validation references, model/runtime metadata, approval state.
 
 Keep per-session content separate from portable style records. Store the style version used to generate each note.
+
+## Updated runtime findings
+
+The inspected Electron app and private prompt tester use Ollama. The inspected Tauri development checkout instead uses embedded llama.cpp. The hackathon's requested real-Ollama simulation does not establish Tauri compatibility. See [source findings](current-app-findings.md).
+
+Implement simulation by supplying a fictional transcript to real inference, not by enabling Electron E2E or Tauri fake-engine modes. Add run purpose, immutable prompt versions, and an untouched simulation fixture. See [data capture](data-capture.md).

@@ -9,7 +9,7 @@ Help a clinician independently create and maintain a reusable local note-style p
 - Example-note intake or starter selection.
 - Structured, clinician-confirmed preferences.
 - Prompt compilation with fixed factual-grounding rules.
-- Local preview generation using the target runtime.
+- Internal refinement on one selected fictional transcript, then Template Control, then a separate Main Meeting simulation with real Ollama.
 - Explicit feedback and targeted preference/prompt changes.
 - Additional examples and separation of development/held-out evaluation.
 - Save/export, active-style visibility, version history, and rollback.
@@ -17,7 +17,7 @@ Help a clinician independently create and maintain a reusable local note-style p
 
 ## Out of scope
 
-Recording, transcription, audio retention, diarization, EHR integration, insurance compliance automation, diagnostic advice, autonomous clinical planning, model-weight training, fleet-wide learning, cloud coaching, and background changes without clinician approval.
+Customer-style shopping/marketplace, recording, transcription, audio retention, diarization, EHR integration, insurance compliance automation, diagnostic advice, autonomous clinical planning, model-weight training, fleet-wide learning, cloud coaching, and background changes without clinician approval.
 
 ## MVP acceptance checklist — unimplemented until demonstrated
 
@@ -25,6 +25,9 @@ Recording, transcription, audio retention, diarization, EHR integration, insuran
 - [ ] Preference interpretation is confirmed before compilation.
 - [ ] Preview runs on a pinned local model/configuration.
 - [ ] Feedback changes only the intended preferences.
+- [ ] Simulation uses a different fictional transcript from internal refinement; fake inference is disabled.
+- [ ] Template Control opens after internal preparation; defaults remain available.
+- [ ] Every run is labeled development, simulation, or real; simulation is excluded from real-session usage.
 - [ ] A fresh transcript is used before final approval.
 - [ ] Example-note facts cannot carry into unrelated sessions unnoticed.
 - [ ] Missing next actions follow an explicit omission rule.

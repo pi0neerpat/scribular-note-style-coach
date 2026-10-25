@@ -22,11 +22,11 @@ The event expects a working tool with README, repo, and demo video. Slides are o
 
 ## Smallest build plan
 
-1. Local interface with confirmed structured preferences and prompt export.
-2. Ollama preview on a newly created fictional transcript.
-3. A targeted change with current/proposed comparison.
-4. Saved active style and one subsequent version; rollback.
-5. Objective checks and one fresh-case preview.
+1. Document intake with confirmed selection/preferences.
+2. Internal bounded prompt-development loop on fictional transcript A.
+3. Template Control with generated draft/defaults and saved versions.
+4. Main Meeting simulation: different fictional transcript B, real Ollama, visible selected version.
+5. Explicit feedback, proposed update, objective checks, approval, and rollback.
 6. Document actual startup, hardware/model, limitations, and measured behavior.
 7. Record demo and complete submission through the event site.
 
@@ -62,3 +62,7 @@ Distinguish any mocked UI/checks from actual local-model behavior.
 ## Use of Claude
 
 The event theme mentions building with Claude. The intended clinician runtime remains local. Existing founder-assisted tooling uses Claude, but that predates the hackathon and must not be claimed as new work. Record the team's actual development use honestly; do not claim eligibility based solely on this planning document.
+
+## Brainstorm scope refinement
+
+Customer-style shopping is explicitly de-scoped. The four screens and data-capture specification supersede the earlier onboarding order. Do not claim Tauri compatibility from Ollama-only results.

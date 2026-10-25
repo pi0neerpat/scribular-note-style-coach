@@ -1,37 +1,62 @@
-# Proposed clinician workflow
+# Clinician journey — revised four-screen flow
 
-This is a product specification, not a claim of implemented behavior.
+Current product direction from the team's latest brainstorm (October 25, 2026). This supersedes the earlier onboarding sequence and visual; it is a specification, not implemented behavior.
 
-## First setup
+## 1. Upload documents
 
-1. **Show your style.** Choose a starter or paste an example note locally. A matching transcript is optional, not required.
-2. **Confirm preferences.** Review suggested headings, brevity, reporter perspective, terminology, quote preferences, and when sections should be omitted. The example supplies style, not patient facts.
-3. **Preview.** Generate a note with the actual supported local runtime using a bundled fictional session. Show the source transcript next to the result.
-4. **Give feedback.** For example: “Shorter overall, but keep the interventions specific.”
-5. **Confirm the change.** “Reduce background detail; retain explicitly supported interventions; keep headings and naming unchanged.”
-6. **Try another session.** Run a fresh example; show objective checks and any unresolved concerns without declaring clinical accuracy from a model score.
-7. **Save.** Save the prompt, confirmed preferences, version, and runtime metadata. Make copying the prompt possible; integration into Scribular settings is a separate implementation decision.
+**Purpose:** supply the clinician's desired note style, not browse other customers' styles.
 
-## My Note Style — continued visibility
+- Upload a preferred note/template or paste its text.
+- Confirm the note type/modality selection used to choose an internal fictional transcript. Extract and confirm the main preferences within this screen.
+- Offer a direct “Use a default style” route to Template Control; uploading is not mandatory for that route.
+- Never treat the example's patient facts as reusable prompt content.
+- CTA: **Create my template**.
 
-Show active style name/version, last update, a plain-language preference summary, prompt access, change history, and restore controls. Record the generating style version on each note so later style changes do not rewrite history.
+Proposed MVP import support: plain text/Markdown/paste first. PDF/Word extraction is not implemented or promised; accepted formats must be explicit.
 
-## Continued learning and improvement
+## 2. Preparing your template — local internal loop
 
-1. The clinician flags a recurring issue or explicitly chooses “Use this edit to improve my style.”
-2. The coach asks whether the change is a recurring preference or specific to this session.
-3. A confirmed recurring preference becomes a proposed patch, not an immediate update.
-4. Show what changes, why, and before/after previews.
-5. Run local regression examples; preserve evidence-grounding instructions.
-6. The clinician approves, rejects, or defers.
-7. Record a new version and make rollback available. Existing notes remain untouched.
+The system selects **one development transcript A** from a bundled fictional fixture set using the confirmed selection. Build a candidate, generate a real local-model note, check it, and apply bounded targeted revisions.
 
-Do not treat every manual edit as a permanent preference. Do not silently train on patient content. Do not automatically replace a working style after a model or app update.
+Show honest phase progress, iteration count, elapsed time, and Cancel. Do not show invented percentage completion. A completed loop creates a **draft**, not a clinically validated template.
 
-## Failure behavior
+“Training” here means prompt development/refinement. No model-weight updates are implied. A judge that has not been calibrated against clinician labels cannot certify quality.
 
-- Ollama unavailable: explain setup; no cloud fallback.
-- Ambiguous feedback: ask one focused question.
-- Revision fails checks or iteration budget: retain the prior style and expose unresolved issues.
-- Source exceeds the tested context budget: stop with an actionable message rather than silently truncating. Long-session handling is not solved by multiple agents.
-- Judge unvalidated: label it experimental; do not use it to auto-approve.
+CTA on completion: **Review my template**, opening Template Control. If generation fails, retain inputs and let the clinician retry or choose a default.
+
+## 3. Template Control — persistent home for note styles
+
+Show the newly created draft and built-in defaults, without a customer-style marketplace.
+
+- Name, preference summary, editable prompt, source (generated/default), status, and version.
+- Review and edit the draft; select a default instead if preferred.
+- Clearly mark the active approved version.
+- Save/activate, duplicate, compare revisions, restore, and **Try in a simulated session**.
+- Changes produce new drafts; do not overwrite a working active version.
+- Initial drafts may be used in simulation before activation. Later updates retain the current active style until approved.
+
+This screen remains available after onboarding. Template creation is not a one-time hidden wizard.
+
+## 4. Main Meeting page — simulated session, real summary
+
+Reuse the meeting/session layout with an explicit **Simulated session** badge. Do not capture microphone/system audio or fabricate a recording.
+
+- Load bundled fictional **transcript B**, different from development transcript A and not exposed to the refinement loop.
+- Run the selected draft/default through **real Ollama**, not a canned summary.
+- Show source transcript and generated note, selected style/version, progress, retry/cancel, and targeted feedback.
+- Actions: accept/activate the initial style; edit this sample note only; or **Improve my template**, returning to Template Control with a proposed recurring preference.
+- Keep simulation runs separate from real-session counts, retention behavior, and customer-success claims.
+
+A failed fresh example can drive another revision, but then B becomes development evidence. Use a new untouched example C for the next generalization check. Do not keep calling B “held out” after tuning against its feedback.
+
+The user's requested hackathon path uses Ollama. The inspected Tauri runtime instead uses embedded llama.cpp; compatibility is a separate validation task.
+
+## Continued improvement
+
+Template Control -> simulate a fresh session -> explicit feedback -> choose “this note only” or “future notes” -> proposed version -> regression checks -> clinician approval -> activate.
+
+Retain version history and rollback. Existing notes keep the style/prompt snapshot used when generated. No automatic marketplace discovery, background style replacement, or silent weight training.
+
+## Data capture and failure behavior
+
+See [data capture](data-capture.md) and [screen specification](ui-screens.md). No raw patient content goes into product telemetry. On failed checks or cancelled preparation, preserve the prior approved style. On runtime/context errors, give an actionable message with no cloud fallback.

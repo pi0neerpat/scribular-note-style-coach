@@ -31,3 +31,9 @@ Sources: team discussion transcripts and whiteboard supplied during this convers
 Which exact local model/configuration and hardware? What acceptable latency? Which fixtures and failure modes? What integration/export contract? Who owns engineering, design/testing, and pitch? What actually works by the deadline?
 
 No newer-model capability claims, performance numbers, or local compliance guarantees are inferred from the discussion.
+
+## Latest requester brainstorm — supersedes earlier screen order
+
+Upload documents -> internal prompt loop on one selected transcript -> Template Control -> Main Meeting simulation using a different transcript and real Ollama. Built-in defaults remain available; customer-style shopping is de-scoped. Continuous learning means evidence and explicit approved revisions, not silent weight training.
+
+The requester authorized inspection of both application repositories and the private custom-prompt workflow. Read-only findings are recorded separately; private patient records were not extracted.

@@ -59,3 +59,11 @@ No numeric performance, savings, or compliance results have been measured in thi
 Observe explicit feedback -> distinguish recurring preference from session-specific edit -> propose one patch -> test development cases -> validate a final candidate -> clinician approves -> version -> observe subsequent editing.
 
 Keep changes reversible and history intact. Freeze a baseline before model/runtime updates and rerun regressions. No silent background replacement of styles or automatic model training.
+
+## Latest four-screen split
+
+The internal loop uses one selected fictional development transcript A. Template Control then opens. The main meeting simulation uses an untouched fictional B and real Ollama. This separation is mandatory; fitting A is not proof of generalization.
+
+If feedback from B changes the prompt, B becomes development evidence and the next check needs an untouched C. Preserve a separate final evaluation set. Pin runtime as well as model: the newer Tauri checkout uses llama.cpp, so its behavior must be tested separately.
+
+Record acceptance explicitly and separate development/simulation/real run purposes; never infer real-session adoption from a fictional demo. See [data capture](data-capture.md).
