@@ -12,15 +12,15 @@ Claude Impact Lab Hackathon, Seattle, October 25, 2026. The finals are five-minu
 
 1. Reset demo data: stop the server, run `rm -rf app/data`, then `./start-demo.sh` (or `OLLAMA_URL=http://127.0.0.1:11435 python3 app/server.py` on the build laptop).
 2. Run one throwaway simulation so the model is loaded into memory, then reset again. The first generation after a cold start is slower.
-3. Set browser zoom to 125% and close other tabs. Open http://127.0.0.1:8765 on the **Why** screen.
+3. Set browser zoom to 125% and close other tabs. Open http://127.0.0.1:8765. With no saved templates it opens on **New template**.
 4. Optional privacy moment: turn Wi-Fi off before the demo. Everything runs on `127.0.0.1`, so it should keep working. **Rehearse this once first.**
 
 Timings measured on the build laptop (Apple M5, 16 GB, `gemma4:e4b`). These are single runs, not benchmarks:
 
 | Step | Time |
 |---|---|
-| Prepare template | ~7 s |
-| Simulated note | ~3 s |
+| Build template + first sample note | ~10 s warm (38 s right after a cold start) |
+| Session note | ~3–5 s |
 | Understand feedback | ~1 s |
 | Before/after preview | ~5 s |
 
@@ -28,13 +28,13 @@ Timings measured on the build laptop (Apple M5, 16 GB, `gemma4:e4b`). These are 
 
 ## Final: five-minute live demo
 
-### 0:00–0:30 · Hook (Why screen, hero visible)
+### 0:00–0:30 · Hook (spoken; the app is on screen behind you)
 
 > "Every therapy session ends the same way: with paperwork. Therapists write a progress note for every client, for insurance and for the record, between sessions or late at night. That's time not spent with patients.
 >
 > We're Scribular, and our promise is simple: **less admin, more time talking to patients.**"
 
-### 0:30–1:15 · Problem → our approach (scroll the Why screen)
+### 0:30–1:15 · Problem → our approach (spoken)
 
 > "AI scribes can draft those notes, but most of them send the session to someone else's cloud. In therapy, that's the most sensitive conversation in a person's life.
 >
@@ -46,39 +46,27 @@ Timings measured on the build laptop (Apple M5, 16 GB, `gemma4:e4b`). These are 
 
 > "So today we built the **Note-Style Coach**: a tool clinicians use to customize their own clinical notes. No developer, no email thread, no cloud. Let me show you."
 
-Click **Customize my notes →**.
+Start on **New template**.
 
-### 1:30–2:15 · Step 1 and Step 2: learn the style
+### 1:30–2:00 · Saved templates, then write a note
 
-- Choose **Load a fictional sample note… → Narrative therapy: three-part note**, then click **Read my style**.
-  > "The therapist shows it one note they like. It reads the *style* (sections, length, voice, quotes) and asks them to confirm anything it's unsure about. It doesn't keep patient details from the example."
-- Point at **Next Actions** being marked optional. Click **Create my template**.
-  > "Now the AI on this laptop writes a practice note on a fictional session, checks its own work, and fixes problems. You can see every phase as it happens."
-- When it finishes, click **Review my template**.
+- Point at the sidebar: **Saved note templates** (Narrative, SOAP, DAP are preloaded).
+- Click **✎ Write session note**, choose a transcript from the dated list, pick a **Note template**, and click **Write note** (~5 s).
+  > "After a session, the therapist picks the transcript and their template, and gets a note in their own style, generated on this laptop."
 
-### 2:15–3:00 · Step 3 and Step 4: test on a new session
+### 2:00–2:45 · Build a new template from one example
 
-- On Template Control:
-  > "This is a draft. Nothing goes live until the therapist approves it."
-- Click **Try in a simulated session**.
-  > "Here's a different fictional session it has never seen, and a real note generated locally in about three seconds."
-- Point at the transcript (left), the note (right), and the checks.
-  > "It checks every quote word for word against the transcript, and checks who said it, so a client's words can't end up credited to the therapist."
-- If a check fails (often *Next Actions has a placeholder*), say:
-  > "And when the model slips, it tells you instead of hiding it."
+- Click **+ New template**, choose **or use a sample… → Brief CBT note**, name it `CBT brief`, and click **Build** (~5–10 s).
+  > "Paste one note you like and click Build. The AI on this laptop learns the style, practices, checks itself, and writes a sample note."
 
-### 3:00–4:00 · Step 4: teach it in plain English
+### 2:45–3:45 · Chat to adjust, then Save
 
-- Click **Improve my template**. In *Tell us in your own words*, type **exactly**: `Keep each section to two sentences.` Leave *Apply to future notes* set to **Yes**, then click **Submit**.
-  > "The therapist just says what they want, in plain English."
-- On *Review proposed preference change* (about 1 s):
-  > "It turns that into a specific, reviewable change. It doesn't rewrite anything behind your back."
-- Click **Confirm proposal**. The before/after preview on a fresh session takes about 5 s.
-  > "Before and after, on a brand-new session. Same facts, the therapist's preferred length."
-- Click **Approve & activate**. Point at **Version history**.
-  > "Every version is saved, and any one can be restored in one click."
+- In the chat, type `Keep each section to two sentences.` and press Enter. It answers with the exact change (max sentences 3 → 2). Click **Apply** (~5 s) to see before and after.
+  > "They just say what they want. It shows the change first, and nothing is used until they save."
+- Optional: type `Add a section called Risk` → **Apply**.
+- Click **Save**. The template joins **Saved note templates**.
 
-**Avoid typing "leave out Next Actions…".** The free-text interpreter can't change that rule yet and will answer "no change."
+**Avoid typing "leave out Next Actions…".** The chat can't change that rule yet and will say it can't make that change.
 
 ### 4:00–4:45 · Why this wins (rubric in plain words)
 
@@ -104,12 +92,12 @@ Click **Customize my notes →**.
 
 ## Demo video (2–3 minutes, required for submission)
 
-1. **0:00–0:15** Why screen hero: "Less admin, more time talking to patients."
-2. **0:15–0:40** Scroll the problem and the local-AI solution (voice-over from the hook above).
-3. **0:40–1:20** Sample note → **Read my style** → **Create my template** (keep the progress phases on screen).
-4. **1:20–1:50** **Try in a simulated session**: transcript, note, checks.
-5. **1:50–2:30** **Improve my template**, "Keep each section to two sentences.", **Confirm proposal**, before/after, **Approve & activate**.
-6. **2:30–2:45** Version history, then the closing line.
+1. **0:00–0:40** Title card or face-to-camera: "Less admin, more time talking to patients," then the problem and the local-AI solution (voice-over from the hook above).
+2. **0:40–1:20** **New template**: sample note → **Next** → **Build template** → sample note with checks.
+3. **1:20–1:35** **Save and activate**: the template appears under **Saved note templates**.
+4. **1:35–2:00** **Write session note**: choose a session and the template → **Write note**.
+5. **2:00–2:35** **Improve template**: "Keep each section to two sentences." → **Preview on a new session** → before/after → **Save and activate**.
+6. **2:35–2:45** Closing line.
 
 Record at 1080p with the browser at 125%. Trim the model waits if you like, but don't speed up or fake generation. Say it's real local inference.
 

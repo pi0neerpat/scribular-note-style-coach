@@ -58,11 +58,10 @@ No customer-style shopping/marketplace. Distinguish fictional development/simula
    ```bash
    git clone https://github.com/pi0neerpat/scribular-note-style-coach.git
    cd scribular-note-style-coach
-   git checkout local-demo-app        # until the PR is merged
    ./start-demo.sh
    ```
    The script checks Python 3.9+ and Ollama, downloads `gemma4:e4b` the first time (~6.6 GB), starts the server, and opens http://127.0.0.1:8765. If something is missing, it prints what to install.
-3. Click **Create my note style → Load a fictional sample note → Read my style → Create my template** and continue through the four steps.
+3. Pick a saved note template, or create one under **+ New template** (paste or choose a sample → **Build** → chat changes → **Save**). Use **✎ Write session note** to choose a transcript and a template.
 
 Tested on macOS (Apple M5, 16 GB). Plan for about 8 GB of free memory for the model. Windows has not been tested; run `python app\server.py` with Ollama running if you want to try.
 
@@ -87,11 +86,12 @@ The imported host variant `gemma-4-E2B-it.gguf:latest` (Q4_K_M) on Ollama 0.20.5
 
 ### What you can do
 
-0. **Why**: problem statement, value proposition, and solution.
-1. **Upload documents**: paste a note or load a `.txt`/`.md` file (or pick one of four fictional samples in `examples/sample-notes/`), pick the note type, and confirm the extracted preferences. Only structure and style are kept. Or start from a built-in default.
-2. **Preparing your template**: real phases, attempt count (up to 3: one first try plus at most two targeted revisions), elapsed time, and cancel/retry. Runs on fictional development transcript **A**.
-3. **Template Control**: the draft and its practice checks, a preference editor, an advanced prompt editor (the fixed grounding rules can't be removed), version history, approve/activate, and restore.
-4. **Main Meeting: Simulation**: fictional transcript **B** (initially separate from refinement) and a real local note. From there you can accept (and activate), *edit this note only*, or *improve my template*. Choosing future-style feedback marks B as development evidence and asks the local model for a bounded patch. Vague feedback gets a focused clarification. Review and confirm the patch before it creates a proposed version; only then is a fresh fixture selected for preview. Activation remains a separate explicit action. *Retry this note* regenerates the same source with an ephemeral correction, marks it as development evidence, and leaves style versions/activation intact.
+The UI is a clinician app with a left sidebar of **Saved note templates**. Three starter templates (Narrative, SOAP, DAP) are preloaded on first launch; set `COACH_STARTERS=0` to start empty.
+
+1. **New template**: paste a note you like, upload a `.txt`/`.md` file, or pick a fictional sample. Name it and click **Build**. The local model reads the style, practices on fictional transcript **A** (up to 3 attempts), and writes a sample note on a separate practice transcript.
+2. **Chat to adjust**: on the template page, type changes in plain language (for example "Keep each section to two sentences" or "Add a section called Risk"). Each change is shown first and applied only when you click **Apply**, with a before/after. **Save** makes it active; **Undo change** rejects it.
+3. **Write session note**: choose a transcript (fictional demo transcripts, listed by date and time) and a saved **Note template**, then **Write note**. You can copy, edit, use *Fix this note* (a one-off correction), or use *Improve template*.
+4. Saved templates can be reopened from the sidebar to chat further changes, try other transcripts, or restore earlier versions.
 
 Supported input: pasted text, `.txt`, `.md`. PDF/Word are not supported.
 

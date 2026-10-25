@@ -1,7 +1,7 @@
 """End-to-end check of the four-screen flow against a running local server + real Ollama.
 
 Usage:
-  COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py   # in one terminal (fresh data dir)
+  COACH_STARTERS=0 COACH_DATA_DIR=/tmp/coach-e2e python3 app/server.py   # fresh data dir, no starter templates
   python3 scripts/e2e_demo_check.py                     # in another
 
 Exits non-zero if any step fails. Prints timings; no note text is printed.
