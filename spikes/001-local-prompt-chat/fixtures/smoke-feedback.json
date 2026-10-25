@@ -1,0 +1,46 @@
+[
+  {
+    "action": "chat",
+    "text": "Please draft my initial reusable prompt from the supplied style requirements."
+  },
+  {
+    "action": "apply"
+  },
+  {
+    "action": "preview",
+    "fixture": "development-a"
+  },
+  {
+    "action": "chat",
+    "text": "Keep the same headings and rules, but make Client Discussed and Therapist Contribution exactly one sentence each. Keep exact client language when possible. Do not change how Next Actions works."
+  },
+  {
+    "action": "apply"
+  },
+  {
+    "action": "preview",
+    "fixture": "development-a"
+  },
+  {
+    "action": "chat",
+    "text": "The development preview left out the explicitly stated phone-free dinner next action and has no direct client quotation. Revise the reusable prompt so Client Discussed includes one short exact client quote if available, and Next Actions includes explicitly stated actions while remaining omitted when absent. Keep the two main sections exactly one sentence each. Remove the fictional pottery example from the reusable prompt entirely. Preserve all other requirements."
+  },
+  {
+    "action": "apply"
+  },
+  {
+    "action": "preview",
+    "fixture": "development-a"
+  },
+  {
+    "action": "preview",
+    "fixture": "simulation-b"
+  },
+  {
+    "action": "discuss_test"
+  },
+  {
+    "action": "chat",
+    "text": "Can you make it better?"
+  }
+]

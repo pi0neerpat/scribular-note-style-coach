@@ -76,7 +76,7 @@ This is a public repo. Follow [publication boundaries](docs/privacy.md).
 - Never commit original emails/PDFs, customer names/contact details/credentials, private configs/paths/history, or real session excerpts.
 - Demo/test fixtures must be newly created fictional content, labeled as such.
 - Treat uploaded documents, prompts, notes, edits, and free-text feedback as potentially sensitive. Keep them local and out of general logs, analytics, screenshots, and source control.
-- No runtime content leaves the machine for this demo. Shared product analytics are deferred; local learning events may use the schema principles in docs/data-capture.md.
+- The planned on-device demo keeps runtime content on that device. Spike 001 defaults to loopback but permits an explicit private `--host`; in that configuration, request content is sent to that host and may leave the client VM. No cloud fallback is used, which is not proof that content stays on the VM. Shared product analytics are deferred; local learning events may use the schema principles in docs/data-capture.md.
 - Separate development/simulation runs from real-session usage counts.
 - Do not copy existing device-linked usage/error payloads into a new telemetry design.
 - Do not claim anonymization, legal compliance, clinical validation, or quantified savings without evidence.
@@ -95,7 +95,7 @@ This is a public repo. Follow [publication boundaries](docs/privacy.md).
 - Run the repository's actual checks and document the commands/results. Never report unrun tests as passing.
 - Verify the end-to-end flow using real local inference on A and distinct B.
 - Verify draft vs active state, immutable provenance, approved updates, rollback, cancellation/failure preservation, and optional-section rules.
-- Check local-only data flow and that fictional runs do not count as real customer sessions.
+- Check the configured data flow and whether content remains on device; document any inference-host boundary. Do not treat no-cloud routing as proof of on-device containment. Verify fictional runs do not count as real customer sessions.
 - Use focused automated checks where they protect meaningful behavior; do not write tests merely mirroring implementation or for documentation-only changes.
 - Document actual setup steps, supported file types, model/hardware, latency, limitations, and any mocks.
 - Keep implementation status and submission checklist truthful. Do not report an event submission as complete without its receipt.
