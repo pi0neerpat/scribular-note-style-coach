@@ -139,7 +139,7 @@ function noteView(ctx) {
     panel = `<div class="writing"><span class="spinner"></span>Thinking about your feedback…</div>`;
   } else if (R.clarify) {
     panel = `<div class="ask"><b>${esc(R.clarify.question)}</b><div class="row">${(R.clarify.options || []).map((o) => `<button class="btn" data-act="clarify" data-value="${esc(o)}">${esc(o)}</button>`).join("")}</div></div>`;
-  } else if (pp) {
+  } else if (pp && ctx !== "template") {
     panel = `<div class="suggest"><div class="suggest-h">Suggested update to “${esc(style(v.styleId).name)}”</div>
       <ul>${pp.patch.map(patchLine).join("")}</ul>
       <div class="row"><button class="btn primary" data-act="confirm-patch" data-id="${pp.id}" data-base="${pp.baseVersionId}">Preview on a new session</button><button class="btn" data-act="decline-patch" data-id="${pp.id}">Discard</button></div></div>`;
