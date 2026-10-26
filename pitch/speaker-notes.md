@@ -8,11 +8,9 @@ My wife became a therapist because she wanted to help people. But the paperwork 
 ## Slide 2
 
 [SLIDE 2]
-AI could help, but therapy is confidential. And its not just in therapy- In our research, privacy and security ranked as the top concern for small businesses who need AI.
+AI could help, but therapy is confidential. And its not just in therapy- In our research, privacy and security is the number one barrier for small businesses adopting AI.
 
-EDITORIAL NOTE: The cited public research does NOT support the “top concern” / #1 ranking claim. Q20 reports reliability and accuracy concerns at 45%, and data security/privacy risks at 42%, among 425 users of AI tools. Recommend saying “a major concern.” Method: online survey by TechnoMetrica using panel partners; fielded February 17–23, 2026; 517 owners at firms with 2–99 employees; stated credibility interval ±4.4 percentage points.
-
-EXACT Q20 BASE/SOURCE: “Q20. What are your company's main concerns about using AI? (Please select all that apply). Base=425 Users of AI tools, +/-5.0 PTS”. Source: SBE Council, Small Business Technology Use Survey (March 2026), printed p. 38.
+EVIDENCE NOTE: SBE Council, Small Business Technology Use Survey (March 2026), printed p. 40, on the single biggest barrier to AI adoption: 30% of owners name data privacy (17%) or cybersecurity (13%), ahead of limited knowledge (23%). The "#1" claim is for the combined privacy & security category. Privacy alone (17%) is NOT #1, so do not say "privacy is the number one barrier" on its own. Survey method: online survey by TechnoMetrica using panel partners; fielded February 17–23, 2026; 517 owners at firms with 2–99 employees.
 
 ## Slide 3
 

@@ -1,6 +1,6 @@
 # Scribular pitch deck
 
-The editable five-slide PowerPoint is in `output/scribular-pitch.pptx`. All slide text and artwork—including the bridge—is native PowerPoint geometry. Each slide includes the supplied speaker script, with editorial notes added where requested.
+The editable five-slide PowerPoint is in `output/scribular-pitch.pptx`. All slide text is native PowerPoint text; the simplified deck has no artwork. Each slide includes the supplied speaker script, with editorial notes added where requested.
 
 ## Build
 
@@ -21,7 +21,7 @@ for i in 1 2 3 4 5; do
 done
 "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
   --headless --disable-gpu --no-sandbox \
-  --print-to-pdf="$PWD/output/scribular-pitch.pdf" \
+  --print-to-pdf="$PWD/output/scribular-pitch-preview.pdf" \
   "file://$PWD/output/preview.html"
 ```
 

@@ -57,3 +57,7 @@ The report's detailed findings (printed p. 38) say 45% cited reliability/accurac
 - `src/render_preview.js` now builds the previews from `build_deck.js` itself, through a recording stand-in for pptxgenjs. Every slide's positions, sizes, and text come from the deck generator, and text wraps at the PPTX box widths. It is still a browser approximation, not a PowerPoint render.
 - Rebuilt PPTX: validator passed; 5 slides, 5 notes parts. PNGs and the 5-page PDF regenerated from the new mirror.
 - Not addressed: on slide 1, the papers still don't sit between the therapist and the client.
+
+## Simplification pass (19:10 CDT)
+
+The founder asked for much simpler slides. The deck was rebuilt as five one-idea slides: white background, one accent color, no diagrams or charts, and at most 12 words of text on any slide. The data slide now shows "#1 Privacy & security". The evidence is SBE Council, March 2026, p.40, which asked for the single biggest barrier: data privacy (17%) plus cybersecurity (13%) equals 30%, ahead of limited knowledge (23%). Privacy alone is not #1. The unmeasured savings figures were removed from the slides. The superseded p.38 notes above are kept for history. Validator passed; 5 slides, 5 notes. The preview PDF is a direct LibreOffice render of the PPTX, and all five slides were visually inspected.
