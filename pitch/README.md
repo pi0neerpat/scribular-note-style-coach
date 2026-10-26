@@ -3,7 +3,7 @@
 Five-slide pitch for the Claude Impact Lab hackathon. The spoken script is in the speaker notes.
 
 - [output/scribular-pitch.pptx](output/scribular-pitch.pptx): the editable deck; present from this file.
-- [output/scribular-pitch-preview.pdf](output/scribular-pitch-preview.pdf): PDF of the deck, rendered directly from the PPTX with LibreOffice 25.2. Regenerated for the simplified deck with `node src/render_preview.js` and headless Brave (see [BUILD.md](BUILD.md)).
+- [output/scribular-pitch-preview.pdf](output/scribular-pitch-preview.pdf): PDF of the deck, rendered directly from the PPTX with LibreOffice 25.2.
 - [speaker-notes.md](speaker-notes.md): the script, slide by slide, extracted from the deck.
 - [output/REVIEW.md](output/REVIEW.md): independent review findings and fixes.
 - [src/build_deck.js](src/build_deck.js): the generator. To rebuild: \`cd pitch && npm ci && node src/build_deck.js\`. See [BUILD.md](BUILD.md).
